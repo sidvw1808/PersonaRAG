@@ -30,8 +30,3 @@ sources:
     date: "2024-10-13"
     kind: interview
 
-  - type: url
-    url: https://library.hbs.edu/special-collections-and-archives/collections/collection-areas/oral-histories/creating-emerging-markets/interviews/ratan-naval-tata
-    source_id: hbs_creating_emerging_markets
-    title: "Harvard Business School: Creating Emerging Markets oral history"
-    kind: interview

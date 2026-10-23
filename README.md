@@ -120,10 +120,10 @@ Limits to be aware of:
 
 | Persona | Sources |
 |---|---|
-| Elon Musk | 3 Tesla blog posts, Lex Fridman #400 transcript, 3 TED interviews, Stanford eCorner talk, Wikiquote |
-| Mark Zuckerberg | "Open Source AI Is the Path Forward" letter, Lex Fridman #383 and #398, 2 Dwarkesh Podcast episodes, Acquired interview, Harvard commencement 2017 |
-| Tim Cook | 2016 customer letter on encryption, Stanford 2019 and MIT 2017 commencement speeches, Wikiquote |
-| Ratan Tata | Computer History Museum oral history, Stanford GSB View From The Top, 2 CNBC-TV18 interviews, HBS oral history page |
+| Elon Musk (275 chunks) | 3 Tesla blog posts, Lex Fridman #400 transcript, 3 TED interviews, Stanford eCorner talk, Wikiquote |
+| Mark Zuckerberg (348 chunks) | "Open Source AI Is the Path Forward" letter, Lex Fridman #383 and #398, 2 Dwarkesh Podcast episodes, Acquired interview, Harvard commencement 2017 |
+| Tim Cook (20 chunks) | 2016 customer letter on encryption, Stanford 2019 and MIT 2017 commencement speeches, Wikiquote |
+| Ratan Tata (94 chunks) | Computer History Museum oral history, Stanford GSB View From The Top, 2 CNBC-TV18 interviews |
 
 ## Adding sources or a new persona
 
@@ -152,7 +152,9 @@ Limits to be aware of:
    ---
    transcript text...
    ```
-3. Run `python -m personarag.ingest <id>`.
+3. Stop the Streamlit app, then run `python -m personarag.ingest <id>` (the app and the ingester can't rebuild the same ChromaDB collection at the same time).
+
+Only use the person's own words: talks, interviews, letters and posts. Articles or summaries *about* them get retrieved and voiced in the first person as if they had said it.
 
 Prefer primary sources (their own blog posts, letters, talks, interviews) over articles *about* them, and record dates so answers can say *when* something was said.
 
@@ -210,7 +212,16 @@ What the eval caught and how it was fixed:
 - BM25 recovers passages that use exact names and terms the embedding model under-weights (Grok, Diablo, Optimus), which fixed the vector-only misses.
 - The cross-encoder (`ms-marco-MiniLM-L-6-v2`) reads the question and passage together, so it ranks the passage that actually answers the question above ones that merely share the topic.
 - Re-ranking all ~40 fused candidates at full length cost 4.0 s per query on CPU. Capping it to the top 12 candidates truncated to 256 tokens brought that to 0.8 s with MRR 0.79 → 0.78.
-- The Mark Zuckerberg set (11 questions, 2 sources) scores 1.00 / 1.00 in every mode: it is too small to separate the methods, and will become informative as more of that corpus is ingested.
+Mark Zuckerberg set: 11 answerable questions over 348 chunks (2024 letter, two Lex Fridman episodes, two Dwarkesh episodes, Acquired, Harvard commencement).
+
+| Mode | hit_rate@6 | MRR | keyword_recall |
+|---|---|---|---|
+| Vector only | 1.00 | 0.87 | 0.91 |
+| Hybrid (BM25 + vector, RRF) | 0.91 | 0.85 | 1.00 |
+| **Hybrid + cross-encoder re-rank** | **1.00** | **0.89** | **1.00** |
+
+- Hybrid retrieval alone is slightly *worse* here: BM25 pulls in long podcast passages that repeat keywords like "AI" and "open", and one Meta AI question lost its correct passage from the top 6. The re-ranker recovers it, which is why `hybrid_rerank` is the default rather than `hybrid`.
+- **Label correction.** On the first run, re-ranking appeared to lower MRR (0.87 → 0.80). Reading the promoted passages showed they were correct answers in his own words from podcasts added later (Dwarkesh on competing with China, Acquired on Apple vs open platforms), while the labels listed only the 2024 letter. Those two questions now accept both sources. Lesson: when the corpus grows, eval labels must be re-audited, or better retrieval gets scored as worse.
 - Choose a mode with `RETRIEVAL_MODE=vector|hybrid|hybrid_rerank` in `.env`; use `hybrid` on slow machines.
 
 **Effect of growing the corpus.** Expanding the Elon Musk corpus from 61 to 211 chunks (adding a Lex Fridman transcript and TED interviews) kept hit_rate@6 at 1.00, but MRR fell from 0.90 to 0.72 and keyword recall from 1.00 to 0.89: the new long-form interviews also discuss Tesla's strategy and compete with the primary blog posts for the top rank. This regression is what motivated the hybrid retrieval and re-ranking above.

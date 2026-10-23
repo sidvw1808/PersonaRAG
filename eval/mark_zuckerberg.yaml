@@ -14,11 +14,11 @@ questions:
     keywords: [405b]
 
   - question: How should the US compete with China on AI?
-    expect_sources: [open_source_ai_letter]
+    expect_sources: [open_source_ai_letter, dwarkesh_2025]  # both answer it in his words
     keywords: [china]
 
   - question: How did Apple's platform rules shape your thinking about open ecosystems?
-    expect_sources: [open_source_ai_letter]
+    expect_sources: [open_source_ai_letter, acquired_interview]  # both answer it in his words
     keywords: [apple]
 
   - question: Is open source AI safer than closed models?
