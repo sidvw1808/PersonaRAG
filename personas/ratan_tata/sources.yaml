@@ -1,0 +1,5 @@
+# See personas/elon_musk/sources.yaml for the format.
+# This persona ships without sources: add interviews/speeches below or drop transcripts in raw/,
+# then run:  python -m personarag.ingest ratan_tata
+
+sources: []

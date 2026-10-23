@@ -1,0 +1,53 @@
+# Evaluation questions for the elon_musk persona.
+#   expect_sources: source_ids that should be retrieved (see sources.yaml)
+#   keywords:       facts that should appear in the retrieved passages
+#   answerable:     false = the corpus can't answer it; the system should say so, not invent
+# Extend this file as you add sources: aim for 30+ questions for meaningful numbers.
+
+questions:
+  - question: Why did Tesla start by building an expensive sports car?
+    expect_sources: [tesla_master_plan_1]
+    keywords: [sports car, affordable]
+
+  - question: What was the original Tesla master plan?
+    expect_sources: [tesla_master_plan_1, tesla_master_plan_2]
+    keywords: [sports car, affordable]
+
+  - question: Why did Tesla give away its patents?
+    expect_sources: [tesla_patents]
+    keywords: [good faith, patent lawsuits]
+
+  - question: Will Tesla sue people who use its patented technology?
+    expect_sources: [tesla_patents]
+    keywords: [good faith]
+
+  - question: How safe should self-driving cars be compared with human drivers?
+    expect_sources: [tesla_master_plan_2]
+    keywords: [10x safer, fleet learning]
+
+  - question: Could my car earn money while I'm not using it?
+    expect_sources: [tesla_master_plan_2]
+    keywords: [make money for you]
+
+  - question: Why combine solar roofs with battery storage?
+    expect_sources: [tesla_master_plan_2]
+    keywords: [solar roof]
+
+  - question: Why does humanity need to go to Mars?
+    expect_sources: [wikiquote_elon]
+    keywords: [mars]
+
+  - question: Is artificial intelligence dangerous?
+    expect_sources: [wikiquote_elon]
+    keywords: [artificial intelligence]
+
+  - question: Do you think Tesla should expand into trucks and buses?
+    expect_sources: [tesla_master_plan_2]
+    keywords: []
+
+  # Out of scope: nothing in the corpus covers these.
+  - question: What is your favourite pizza topping?
+    answerable: false
+
+  - question: What is your opinion of the 2031 FIFA World Cup host city?
+    answerable: false

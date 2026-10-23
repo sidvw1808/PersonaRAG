@@ -1,0 +1,16 @@
+# CPU-only PyTorch keeps the install small; for GPU, install torch from pytorch.org first.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+anthropic
+sentence-transformers
+chromadb
+fastapi
+uvicorn[standard]
+streamlit
+pyyaml
+python-dotenv
+pypdf
+trafilatura
+requests
+youtube-transcript-api>=1.0
+pytest

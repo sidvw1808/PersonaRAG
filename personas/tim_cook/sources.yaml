@@ -1,0 +1,19 @@
+# See personas/elon_musk/sources.yaml for the format.
+# Re-run after editing:  python -m personarag.ingest tim_cook
+
+sources:
+  - type: url
+    url: https://www.apple.com/customer-letter/
+    source_id: apple_customer_letter
+    title: A Message to Our Customers (encryption and the FBI)
+    date: "2016-02-16"
+    kind: open letter
+
+  - type: url
+    url: https://en.wikiquote.org/wiki/Tim_Cook
+    source_id: wikiquote_tim_cook
+    title: Wikiquote - Tim Cook (sourced quotations)
+    kind: quote collection
+
+  # Good additions: commencement speeches (Stanford 2019, MIT 2017, Duke 2010),
+  # conference keynotes and long-form interviews via `type: youtube`.

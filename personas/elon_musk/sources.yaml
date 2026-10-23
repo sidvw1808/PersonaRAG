@@ -1,0 +1,48 @@
+# Sources for this persona's knowledge base.
+# Every supported file you drop in raw/ (.txt .md .pdf .srt .vtt) is ingested automatically too.
+#
+# Types:
+#   url      -> article text is extracted from the page
+#   youtube  -> English transcript of the video (id = the part after watch?v=)
+#   file     -> a file inside this folder, with extra metadata
+#
+# Optional fields on any entry: title, date, kind (blog/interview/podcast/speech/...), source_id
+#
+# Re-run after editing:  python -m personarag.ingest elon_musk
+
+sources:
+  # Blog posts written by Elon Musk on the Tesla blog (archived copies; tesla.com blocks scripts).
+  - type: url
+    url: https://web.archive.org/web/2010id_/http://www.teslamotors.com/blog/secret-tesla-motors-master-plan-just-between-you-and-me
+    source_id: tesla_master_plan_1
+    title: The Secret Tesla Motors Master Plan (just between you and me)
+    date: "2006-08-02"
+    kind: blog post
+
+  - type: url
+    url: https://web.archive.org/web/2016id_/https://www.tesla.com/blog/master-plan-part-deux
+    source_id: tesla_master_plan_2
+    title: Master Plan, Part Deux
+    date: "2016-07-20"
+    kind: blog post
+
+  - type: url
+    url: https://web.archive.org/web/2015id_/https://www.tesla.com/blog/all-our-patent-are-belong-you
+    source_id: tesla_patents
+    title: All Our Patent Are Belong To You
+    date: "2014-06-12"
+    kind: blog post
+
+  # Curated, sourced quotations (CC BY-SA). Each quote on the page cites its original interview or talk.
+  - type: url
+    url: https://en.wikiquote.org/wiki/Elon_Musk
+    source_id: wikiquote_elon
+    title: Wikiquote - Elon Musk (sourced quotations)
+    kind: quote collection
+
+  # Add interviews and talks here, e.g.:
+  # - type: youtube
+  #   id: VIDEO_ID_HERE
+  #   title: Interview title
+  #   date: "2024-01-01"
+  #   kind: interview
