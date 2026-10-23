@@ -1,0 +1,55 @@
+# See personas/elon_musk/sources.yaml for the format.
+# Re-run after editing:  python -m personarag.ingest mark_zuckerberg
+
+sources:
+  # --- Written ---
+  - type: url
+    url: https://about.fb.com/news/2024/07/open-source-ai-is-the-path-forward/
+    source_id: open_source_ai_letter
+    title: Open Source AI Is the Path Forward
+    date: "2024-07-23"
+    kind: blog post
+
+  # --- Podcasts (official transcript, with speaker labels) ---
+  - type: url
+    url: https://lexfridman.com/mark-zuckerberg-3-transcript
+    source_id: lex_fridman_398
+    title: "Lex Fridman Podcast #398: First Interview in the Metaverse"
+    date: "2023-09-28"
+    kind: podcast
+
+  # --- Podcasts and talks on YouTube (transcripts fetched automatically) ---
+  - type: youtube
+    id: Ff4fRgnuFgQ
+    source_id: lex_fridman_383
+    title: "Lex Fridman Podcast #383: Future of AI at Meta, Facebook, Instagram, and WhatsApp"
+    date: "2023-06-08"
+    kind: podcast
+
+  - type: youtube
+    id: bc6uFV9CJGg
+    source_id: dwarkesh_2024
+    title: "Dwarkesh Podcast: Llama 3, $10B models, Caesar Augustus, & 1 GW datacenters"
+    date: "2024-04-18"
+    kind: podcast
+
+  - type: youtube
+    id: rYXeQbTuVl0
+    source_id: dwarkesh_2025
+    title: "Dwarkesh Podcast: AI will write most Meta code in 18 months"
+    date: "2025-04-29"
+    kind: podcast
+
+  - type: youtube
+    id: QciJ9ubeLQk
+    source_id: acquired_interview
+    title: "Acquired: The Mark Zuckerberg Interview"
+    date: "2024-09-18"
+    kind: podcast
+
+  - type: youtube
+    id: BmYv8XGl-YU
+    source_id: harvard_commencement_2017
+    title: Harvard Commencement Address
+    date: "2017-05-25"
+    kind: speech

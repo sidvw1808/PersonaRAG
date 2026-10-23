@@ -7,6 +7,7 @@
 import argparse
 import time
 
+from . import config
 from .chunking import chunk_document
 from .loaders import load_persona_sources
 from .personas import list_personas, load_persona
@@ -37,9 +38,16 @@ def main() -> None:
     parser.add_argument("persona", nargs="?", help="persona folder name, e.g. elon_musk")
     parser.add_argument("--all", action="store_true", help="ingest every persona")
     parser.add_argument("--append", action="store_true", help="keep existing chunks instead of rebuilding")
+    parser.add_argument(
+        "--no-whisper",
+        action="store_true",
+        help="skip videos whose captions can't be fetched instead of transcribing their audio",
+    )
     args = parser.parse_args()
     if not args.persona and not args.all:
         parser.error("give a persona id or --all")
+    if args.no_whisper:
+        config.WHISPER_FALLBACK = False
 
     ids = [p.id for p in list_personas()] if args.all else [args.persona]
     store = VectorStore()

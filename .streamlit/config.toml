@@ -1,0 +1,4 @@
+[server]
+# Streamlit's file watcher imports every loaded module to find their paths, which trips over
+# optional transformers sub-modules (e.g. ones needing torchvision). Restart the app after edits.
+fileWatcherType = "none"

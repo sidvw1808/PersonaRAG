@@ -11,9 +11,12 @@ from pathlib import Path
 
 import yaml
 
+from . import config
+
 TEXT_EXTS = {".txt", ".md"}
 SUBTITLE_EXTS = {".srt", ".vtt"}
-SUPPORTED_EXTS = TEXT_EXTS | SUBTITLE_EXTS | {".pdf"}
+AUDIO_EXTS = {".mp3", ".m4a", ".wav", ".ogg", ".flac", ".webm", ".mp4"}
+SUPPORTED_EXTS = TEXT_EXTS | SUBTITLE_EXTS | AUDIO_EXTS | {".pdf"}
 
 
 @dataclass
@@ -52,7 +55,12 @@ def _strip_subtitles(text: str) -> str:
 
 def load_file(path: Path, meta: dict | None = None) -> Document:
     ext = path.suffix.lower()
-    if ext == ".pdf":
+    if ext in AUDIO_EXTS:
+        from .transcribe import transcribe_file
+
+        text = transcribe_file(path)
+        header = {"kind": "podcast", "transcript": "whisper"}
+    elif ext == ".pdf":
         from pypdf import PdfReader
 
         text = "\n".join(page.extract_text() or "" for page in PdfReader(path).pages)
@@ -102,15 +110,43 @@ def fetch_url(url: str, cache_dir: Path) -> dict:
     return _cached(cache_dir, url, fetch)
 
 
-def fetch_youtube(video_id: str, cache_dir: Path) -> dict:
+def fetch_youtube(video_id: str, cache_dir: Path, force_whisper: bool = False) -> dict:
+    """Captions if the video has them; otherwise download the audio and transcribe it."""
+
     def fetch():
-        from youtube_transcript_api import YouTubeTranscriptApi
+        if not force_whisper:
+            from youtube_transcript_api import YouTubeTranscriptApi
 
-        transcript = YouTubeTranscriptApi().fetch(video_id, languages=["en"])
-        text = " ".join(s.text.replace("\n", " ") for s in transcript)
-        return {"text": text, "title": f"YouTube {video_id}", "date": ""}
+            try:
+                transcript = YouTubeTranscriptApi().fetch(video_id, languages=["en", "en-IN", "en-US"])
+                text = " ".join(s.text.replace("\n", " ") for s in transcript)
+                method = "auto captions" if transcript.is_generated else "captions"
+                return {"text": text, "title": f"YouTube {video_id}", "date": "", "method": method}
+            except Exception as exc:  # noqa: BLE001 - fall through to speech-to-text
+                if not config.WHISPER_FALLBACK:
+                    raise RuntimeError(f"no captions ({type(exc).__name__}); Whisper fallback is off") from exc
+                print(f"  no captions for {video_id} ({type(exc).__name__}); transcribing audio...", flush=True)
+        from .transcribe import transcribe_url
 
-    return _cached(cache_dir, f"yt:{video_id}", fetch)
+        text = transcribe_url(f"https://www.youtube.com/watch?v={video_id}")
+        return {"text": text, "title": f"YouTube {video_id}", "date": "", "method": "whisper"}
+
+    return _cached(cache_dir, f"yt:{video_id}:{'whisper' if force_whisper else 'auto'}", fetch)
+
+
+def fetch_audio(source: str, cache_dir: Path, base_dir: Path) -> dict:
+    """Podcast episode page, direct audio URL, or a local audio file -> Whisper transcript."""
+
+    def fetch():
+        from .transcribe import transcribe_file, transcribe_url
+
+        if source.startswith(("http://", "https://")):
+            text = transcribe_url(source)
+        else:
+            text = transcribe_file(base_dir / source)
+        return {"text": text, "title": Path(source).stem, "date": "", "method": "whisper"}
+
+    return _cached(cache_dir, f"audio:{source}", fetch)
 
 
 def load_persona_sources(persona_dir: Path) -> tuple[list[Document], list[str]]:
@@ -141,10 +177,16 @@ def load_persona_sources(persona_dir: Path) -> tuple[list[Document], list[str]]:
                 data = fetch_url(entry["url"], cache_dir)
                 source_id = entry.get("source_id") or _slug(data["title"])
             elif kind == "youtube":
-                data = fetch_youtube(entry["id"], cache_dir)
+                meta.pop("whisper", None)
+                data = fetch_youtube(entry["id"], cache_dir, force_whisper=entry.get("whisper", False))
                 meta.setdefault("url", f"https://www.youtube.com/watch?v={entry['id']}")
                 meta.setdefault("kind", "video")
                 source_id = entry.get("source_id") or f"yt_{entry['id']}"
+            elif kind == "audio":
+                src = entry.get("url") or entry["path"]
+                data = fetch_audio(src, cache_dir, persona_dir)
+                meta.setdefault("kind", "podcast")
+                source_id = entry.get("source_id") or _slug(data["title"])
             else:
                 raise ValueError(f"unknown source type '{kind}'")
             docs.append(
@@ -155,6 +197,7 @@ def load_persona_sources(persona_dir: Path) -> tuple[list[Document], list[str]]:
                         "title": data["title"],
                         "date": data.get("date", ""),
                         "kind": "article",
+                        "transcript": data.get("method", ""),
                         **meta,
                     },
                 )

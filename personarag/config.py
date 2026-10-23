@@ -38,5 +38,13 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_THINK = os.getenv("OLLAMA_THINK", "0") == "1"
 
+# Speech-to-text for podcasts and caption-less videos (faster-whisper).
+# "base.en" is fast on CPU; "small.en" is more accurate. Set WHISPER_DEVICE=cuda to use the GPU.
+WHISPER_MODEL = os.getenv("WHISPER_MODEL", "base.en")
+WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
+WHISPER_COMPUTE = os.getenv("WHISPER_COMPUTE", "int8")
+# Transcribe a YouTube video with Whisper when its captions can't be fetched.
+WHISPER_FALLBACK = os.getenv("WHISPER_FALLBACK", "1") == "1"
+
 # Number of previous chat turns sent back to the model.
 HISTORY_TURNS = int(os.getenv("HISTORY_TURNS", "6"))

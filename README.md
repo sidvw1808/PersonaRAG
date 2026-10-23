@@ -8,7 +8,8 @@ You can't ask Elon Musk, Tim Cook or Ratan Tata a question directly, but they've
 
 ## Features
 
-- **Persona RAG pipeline:** ingest URLs, YouTube transcripts, PDFs, text and subtitle files → sentence-aware chunking → `bge-small` embeddings → ChromaDB (one collection per persona).
+- **Persona RAG pipeline:** ingest blogs, YouTube videos, podcasts, PDFs, text and subtitle files → sentence-aware chunking → `bge-small` embeddings → ChromaDB (one collection per persona).
+- **Video and podcast ingestion:** YouTube captions are fetched directly; podcasts that aren't on YouTube, local audio files and videos without captions are transcribed locally with Whisper (`faster-whisper` + `yt-dlp`).
 - **Inline citations:** every claim is tied to a numbered source `[n]`, and the UI shows which retrieved passages were actually cited.
 - **Grounding indicator:** model-free signals (citation coverage, retrieval similarity, invalid-citation detection) rate each answer *strong / partial / weak / ungrounded*.
 - **Interaction modes:** Ask, Career, Startup, Technical, Debate, Interview.
@@ -86,6 +87,39 @@ Or run the API (interactive docs at http://127.0.0.1:8000/docs):
 uvicorn api:app --reload
 ```
 
+## How videos and podcasts become knowledge
+
+The LLM never watches or listens to anything: it only ever reads text. Every source is turned into a transcript at ingestion time, then chunked and embedded like any article.
+
+```
+YouTube link ──► captions available? ──yes──► YouTube transcript (human or auto-generated)
+                        │
+                        no
+                        ▼
+Podcast page / MP3 / caption-less video ──► yt-dlp downloads audio ──► Whisper speech-to-text
+                                                                              │
+Blog / letter / transcript page ──► trafilatura extracts article text          │
+                                                                              ▼
+                                          text ──► chunks ──► embeddings ──► vector DB
+```
+
+Transcripts are cached in `personas/<id>/cache/`, so each video is downloaded or transcribed only once.
+
+Limits to be aware of:
+
+- **Speaker attribution.** YouTube captions have no speaker labels, so an interviewer's questions are mixed into the transcript. Prefer sources with labelled transcripts (such as lexfridman.com) or solo talks where possible.
+- **Auto-caption quality.** Auto-generated captions misspell names and have no punctuation. Add `whisper: true` to a YouTube entry to transcribe it with Whisper instead.
+- **Speed.** Whisper `base.en` on CPU transcribes about 4 minutes of audio per minute. Set `WHISPER_DEVICE=cuda` or `WHISPER_MODEL=small.en` in `.env` to trade speed for accuracy.
+
+### Current corpus
+
+| Persona | Sources |
+|---|---|
+| Elon Musk | 3 Tesla blog posts, Lex Fridman #400 transcript, 3 TED interviews, Stanford eCorner talk, Wikiquote |
+| Mark Zuckerberg | "Open Source AI Is the Path Forward" letter, Lex Fridman #383 and #398, 2 Dwarkesh Podcast episodes, Acquired interview, Harvard commencement 2017 |
+| Tim Cook | 2016 customer letter on encryption, Stanford 2019 and MIT 2017 commencement speeches, Wikiquote |
+| Ratan Tata | Computer History Museum oral history, Stanford GSB View From The Top, 2 CNBC-TV18 interviews, HBS oral history page |
+
 ## Adding sources or a new persona
 
 1. Create `personas/<id>/persona.yaml` (copy an existing one).
@@ -100,8 +134,11 @@ uvicorn api:app --reload
      - type: url
        url: https://example.com/essay
        kind: essay
+     - type: audio                          # transcribed with Whisper
+       url: https://example.com/episode.mp3 # or a podcast episode page, or path: raw/episode.mp3
+       kind: podcast
    ```
-   Or drop `.txt / .md / .pdf / .srt / .vtt` files into `personas/<id>/raw/`. A text file can carry its own metadata in a YAML header:
+   Or drop `.txt / .md / .pdf / .srt / .vtt` files, or `.mp3 / .m4a / .wav` audio, into `personas/<id>/raw/`. A text file can carry its own metadata in a YAML header:
    ```
    ---
    title: Commencement speech
@@ -155,6 +192,8 @@ What the eval caught and how it was fixed:
 3. **Fabricated answers to out-of-scope questions** (an invented favourite pizza topping). When retrieval returns nothing above the similarity threshold, the prompt now explicitly tells the model to decline in character.
 4. **Evaluator bug.** "I haven't spoken about this directly, *but*..." was being scored as an abstention, although it introduces an extrapolation. The abstention detector now excludes that pattern.
 
+**Effect of growing the corpus.** Expanding the Elon Musk corpus from 61 to 211 chunks (adding a Lex Fridman transcript and TED interviews) kept hit_rate@6 at 1.00, but MRR fell from 0.90 to 0.72 and keyword recall from 1.00 to 0.89: the new long-form interviews also discuss Tesla's strategy and compete with the primary blog posts for the top rank. Cross-encoder re-ranking (see the roadmap) is the planned fix.
+
 Known limits with a 3B local model: it still extrapolates on some out-of-scope questions, sometimes slips into third person, and occasionally cites a source number that wasn't provided (the grounding report flags these). A larger model is expected to do better on all three; rerun the eval with `LLM_PROVIDER=claude` to compare.
 
 ## Resume bullets
@@ -178,6 +217,8 @@ pytest
 - [x] V3: persona profiles, citations, memory, grounding indicator
 - [x] V4: multi-persona panel with moderator
 - [x] Evaluation harness
+- [x] Video and podcast ingestion with Whisper fallback
+- [ ] Speaker diarization so interviewer questions are not attributed to the persona
 - [ ] Hybrid retrieval (BM25 + vectors) and cross-encoder re-ranking
 - [ ] React front end on top of the FastAPI streaming endpoint
 - [ ] LoRA/QLoRA fine-tune of a small model on interview transcripts for conversational style (RAG keeps supplying the facts)

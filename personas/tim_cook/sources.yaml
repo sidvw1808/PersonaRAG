@@ -15,5 +15,16 @@ sources:
     title: Wikiquote - Tim Cook (sourced quotations)
     kind: quote collection
 
-  # Good additions: commencement speeches (Stanford 2019, MIT 2017, Duke 2010),
-  # conference keynotes and long-form interviews via `type: youtube`.
+  - type: youtube
+    id: 2C2VJwGBRRw
+    source_id: stanford_commencement_2019
+    title: Stanford Commencement Address
+    date: "2019-06-16"
+    kind: speech
+
+  - type: youtube
+    id: ckjkz8zuMMs
+    source_id: mit_commencement_2017
+    title: MIT Commencement Address
+    date: "2017-06-09"
+    kind: speech

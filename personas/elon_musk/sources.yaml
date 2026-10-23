@@ -40,9 +40,49 @@ sources:
     title: Wikiquote - Elon Musk (sourced quotations)
     kind: quote collection
 
-  # Add interviews and talks here, e.g.:
+  # --- Podcasts (official transcript, with speaker labels) ---
+  - type: url
+    url: https://lexfridman.com/elon-musk-4-transcript
+    source_id: lex_fridman_400
+    title: "Lex Fridman Podcast #400: War, AI, Aliens, Politics, Physics, Video Games, and Humanity"
+    date: "2023-11-09"
+    kind: podcast
+
+  # --- Talks and interviews on YouTube (transcripts fetched automatically) ---
+  - type: youtube
+    id: YRvf00NooN8
+    source_id: ted_2022_gigafactory
+    title: "TED: A future worth getting excited about (Gigafactory interview)"
+    date: "2022-04-18"
+    kind: interview
+
+  - type: youtube
+    id: cdZZpaB2kDM
+    source_id: ted_2022_live
+    title: "TED2022: Twitter, Tesla and how his brain works"
+    date: "2022-04-14"
+    kind: interview
+
+  - type: youtube
+    id: zIwLWfaAg-8
+    source_id: ted_2017
+    title: "TED: The future we're building -- and boring"
+    date: "2017-05-03"
+    kind: interview
+
+  - type: youtube
+    id: SVk1hb0ZOrE
+    source_id: stanford_ecorner
+    title: "Stanford eCorner: Elon Musk's Vision for the Future"
+    kind: talk
+
+  # A podcast that isn't on YouTube: give the episode page or MP3 URL and it is
+  # transcribed locally with Whisper:
+  # - type: audio
+  #   url: https://example.com/episode.mp3
+  #   title: Episode title
+  #
+  # Force Whisper for a video whose auto-captions are poor:
   # - type: youtube
-  #   id: VIDEO_ID_HERE
-  #   title: Interview title
-  #   date: "2024-01-01"
-  #   kind: interview
+  #   id: VIDEO_ID
+  #   whisper: true

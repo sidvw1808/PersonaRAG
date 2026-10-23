@@ -1,5 +1,37 @@
 # See personas/elon_musk/sources.yaml for the format.
-# This persona ships without sources: add interviews/speeches below or drop transcripts in raw/,
-# then run:  python -m personarag.ingest ratan_tata
+# Re-run after editing:  python -m personarag.ingest ratan_tata
 
-sources: []
+sources:
+  - type: youtube
+    id: 7-ZbWV61uMs
+    source_id: chm_oral_history
+    title: Oral History of Ratan Tata (Computer History Museum)
+    date: "2017-12-22"
+    kind: interview
+
+  - type: youtube
+    id: 9mySvo-EPT0
+    source_id: stanford_gsb_view_from_the_top
+    title: "Stanford GSB View From The Top: Moving the Tata Group Beyond India"
+    date: "2013-03-05"
+    kind: interview
+
+  - type: youtube
+    id: DymFOFnTS-g
+    source_id: cnbc_tv18_exclusive
+    title: "CNBC-TV18: Ratan Tata's Exclusive Interview"
+    date: "2017-09-20"
+    kind: interview
+
+  - type: youtube
+    id: pPjPwDEZpoY
+    source_id: cnbc_tv18_last_interview
+    title: "CNBC-TV18: Ratan Tata's Last Interview"
+    date: "2024-10-13"
+    kind: interview
+
+  - type: url
+    url: https://library.hbs.edu/special-collections-and-archives/collections/collection-areas/oral-histories/creating-emerging-markets/interviews/ratan-naval-tata
+    source_id: hbs_creating_emerging_markets
+    title: "Harvard Business School: Creating Emerging Markets oral history"
+    kind: interview
