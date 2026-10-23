@@ -45,6 +45,47 @@ questions:
     expect_sources: [tesla_master_plan_2]
     keywords: []
 
+  # --- Long-form interviews (added with the expanded corpus) ---
+  - question: Why is Grok modeled after The Hitchhiker's Guide to the Galaxy?
+    expect_sources: [lex_fridman_400]
+    keywords: [hitchhiker]
+
+  - question: What did you say about playing Diablo 4?
+    expect_sources: [lex_fridman_400]
+    keywords: [diablo]
+
+  - question: What is the limiting factor for Starship launches right now?
+    expect_sources: [lex_fridman_400]
+    keywords: [regulatory approval]
+
+  - question: Why is the Optimus humanoid robot so important for Tesla?
+    expect_sources: [ted_2022_gigafactory]
+    keywords: [optimus]
+
+  - question: How many people will Starship carry to Mars at a time?
+    expect_sources: [ted_2022_gigafactory]
+    keywords: [100 plus people]
+
+  - question: Why are you worried about population collapse and birth rates?
+    expect_sources: [ted_2022_gigafactory]
+    keywords: [birth rate]
+
+  - question: Why do self-driving cars need to solve real-world AI and vision?
+    expect_sources: [ted_2022_gigafactory]
+    keywords: [biological neural net]
+
+  - question: Why did you make an offer to buy Twitter?
+    expect_sources: [ted_2022_live]
+    keywords: [free speech]
+
+  - question: Should Twitter open source its algorithm?
+    expect_sources: [ted_2022_live]
+    keywords: [open source the algorithm]
+
+  - question: How do you want your AI to give physics and engineering answers people can trust?
+    expect_sources: [lex_fridman_400]
+    keywords: [physics]
+
   # Out of scope: nothing in the corpus covers these.
   - question: What is your favourite pizza topping?
     answerable: false

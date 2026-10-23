@@ -16,3 +16,4 @@ youtube-transcript-api>=1.0
 pytest
 faster-whisper
 yt-dlp
+rank_bm25

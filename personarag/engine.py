@@ -66,13 +66,15 @@ class PersonaEngine:
             self._llm = get_llm()
         return self._llm
 
-    def retrieve(self, persona_id: str, question: str, history: list[dict] | None = None) -> list[Hit]:
+    def retrieve(
+        self, persona_id: str, question: str, history: list[dict] | None = None, mode: str | None = None
+    ) -> list[Hit]:
         query = question
         # Short follow-ups ("why?", "what about Mars?") lack context; borrow the previous question.
         prev = [m["content"] for m in (history or []) if m["role"] == "user"]
         if prev and len(question.split()) < 8:
             query = f"{prev[-1]} {question}"
-        return self.store.search(persona_id, query)
+        return self.store.search(persona_id, query, mode=mode)
 
     def _messages(self, question: str, hits: list[Hit], history: list[dict] | None, mode: str):
         # History holds plain text turns; only the newest user turn carries the sources block.

@@ -1,7 +1,7 @@
 from personarag.chunking import chunk_text, split_sentences
 from personarag.engine import grounding_report
 from personarag.loaders import _split_front_matter, _strip_subtitles
-from personarag.store import Hit
+from personarag.store import Hit, rrf_fuse, tokenize
 
 
 def _hit(score=0.7):
@@ -44,3 +44,16 @@ def test_grounding_levels():
 
     bad = grounding_report("A claim with a bogus citation here [7].", hits)
     assert bad["invalid_citations"] == [7] and bad["level"] == "ungrounded"
+
+
+def test_rrf_rewards_agreement_between_retrievers():
+    vector = ["a", "b", "c"]
+    keyword = ["c", "d", "a"]
+    fused = rrf_fuse(vector, keyword)
+    # "a" and "c" appear in both lists, so they outrank items found by only one retriever.
+    assert set(fused[:2]) == {"a", "c"}
+    assert set(fused) == {"a", "b", "c", "d"}
+
+
+def test_tokenize_drops_stopwords_and_punctuation():
+    assert tokenize("Why did Tesla release the Llama-3.1 patents?") == ["tesla", "release", "llama", "3", "1", "patents"]

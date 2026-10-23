@@ -23,6 +23,15 @@ CHUNK_WORDS = int(os.getenv("CHUNK_WORDS", "300"))
 CHUNK_OVERLAP_WORDS = int(os.getenv("CHUNK_OVERLAP_WORDS", "50"))
 
 # Retrieval
+# "vector": embeddings only | "hybrid": BM25 + embeddings fused with RRF |
+# "hybrid_rerank": hybrid, then a cross-encoder re-orders the candidates.
+RETRIEVAL_MODE = os.getenv("RETRIEVAL_MODE", "hybrid_rerank")
+RERANK_MODEL = os.getenv("RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
+# Candidates each retriever contributes before fusion / re-ranking.
+CANDIDATES = int(os.getenv("CANDIDATES", "20"))
+# Only the top fused candidates are re-ranked, each truncated to this many tokens (CPU cost).
+RERANK_POOL = int(os.getenv("RERANK_POOL", "12"))
+RERANK_MAX_TOKENS = int(os.getenv("RERANK_MAX_TOKENS", "256"))
 TOP_K = int(os.getenv("TOP_K", "6"))
 # Hits below this cosine similarity are dropped as irrelevant.
 MIN_SIMILARITY = float(os.getenv("MIN_SIMILARITY", "0.50"))

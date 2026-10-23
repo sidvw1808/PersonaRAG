@@ -1,0 +1,53 @@
+# Evaluation questions for the mark_zuckerberg persona (see eval/elon_musk.yaml for the format).
+
+questions:
+  - question: Why should frontier AI models be open source?
+    expect_sources: [open_source_ai_letter]
+    keywords: [open source]
+
+  - question: What can the history of Linux teach us about AI?
+    expect_sources: [open_source_ai_letter]
+    keywords: [linux]
+
+  - question: What did Meta release with Llama 3.1?
+    expect_sources: [open_source_ai_letter]
+    keywords: [405b]
+
+  - question: How should the US compete with China on AI?
+    expect_sources: [open_source_ai_letter]
+    keywords: [china]
+
+  - question: How did Apple's platform rules shape your thinking about open ecosystems?
+    expect_sources: [open_source_ai_letter]
+    keywords: [apple]
+
+  - question: Is open source AI safer than closed models?
+    expect_sources: [open_source_ai_letter]
+    keywords: [safer]
+
+  - question: How did open sourcing PyTorch and Open Compute help Meta?
+    expect_sources: [open_source_ai_letter]
+    keywords: [open compute]
+
+  - question: What are Codec Avatars and how are the face scans made?
+    expect_sources: [lex_fridman_398]
+    keywords: [codec avatar]
+
+  - question: What is new about the Quest 3 headset?
+    expect_sources: [lex_fridman_398]
+    keywords: [quest]
+
+  - question: How do you see mixed reality blending the physical and digital worlds?
+    expect_sources: [lex_fridman_398]
+    keywords: [mixed reality]
+
+  - question: What is Meta AI and how will people use it in chats?
+    expect_sources: [lex_fridman_398]
+    keywords: [meta ai]
+
+  # Out of scope
+  - question: What is your favourite Bollywood movie?
+    answerable: false
+
+  - question: Who should win the 2030 cricket world cup?
+    answerable: false

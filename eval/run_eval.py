@@ -1,6 +1,7 @@
 """Evaluate retrieval quality and (optionally) answer grounding for a persona.
 
     python -m eval.run_eval elon_musk                 # retrieval only: free, no LLM calls
+    python -m eval.run_eval elon_musk --compare       # vector vs hybrid vs hybrid+rerank
     python -m eval.run_eval elon_musk --generate      # also generate answers and score grounding
     python -m eval.run_eval elon_musk --generate --judge   # plus LLM-as-judge faithfulness
 
@@ -67,16 +68,54 @@ def mean(values):
     return round(sum(values) / len(values), 3) if values else None
 
 
+MODES = ["vector", "hybrid", "hybrid_rerank"]
+
+
+def compare_modes(engine, persona: str, items: list[dict]) -> list[dict]:
+    """Retrieval metrics for every retrieval mode on the same questions (no LLM calls)."""
+    answerable = [i for i in items if i.get("answerable", True) and i.get("expect_sources")]
+    unanswerable = [i for i in items if not i.get("answerable", True)]
+    # Warm up both models so the first mode isn't charged for loading them.
+    engine.store.search(persona, "warm up", mode="hybrid_rerank")
+    table = []
+    for mode in MODES:
+        rows, started = [], time.perf_counter()
+        for item in answerable:
+            rows.append(retrieval_metrics(engine.retrieve(persona, item["question"], mode=mode), item))
+        elapsed = time.perf_counter() - started
+        empty = [not engine.retrieve(persona, i["question"], mode=mode) for i in unanswerable]
+        table.append(
+            {
+                "mode": mode,
+                "hit_rate@k": mean([float(r["hit"]) for r in rows]),
+                "mrr": mean([r["rr"] for r in rows]),
+                "keyword_recall": mean([r["keyword_recall"] for r in rows]),
+                "out_of_scope_no_sources": mean([float(e) for e in empty]),
+                "ms_per_query": round(1000 * elapsed / max(len(answerable), 1)),
+            }
+        )
+    return table
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("persona")
     parser.add_argument("--generate", action="store_true", help="generate answers (uses the LLM)")
     parser.add_argument("--judge", action="store_true", help="LLM-as-judge faithfulness (implies --generate)")
+    parser.add_argument("--compare", action="store_true", help="compare retrieval modes (no LLM calls)")
     args = parser.parse_args()
     args.generate = args.generate or args.judge
 
     items = yaml.safe_load((EVAL_DIR / f"{args.persona}.yaml").read_text(encoding="utf-8"))["questions"]
     engine = PersonaEngine()
+
+    if args.compare:
+        table = compare_modes(engine, args.persona, items)
+        cols = list(table[0])
+        print("| " + " | ".join(cols) + " |\n|" + "---|" * len(cols))
+        for row in table:
+            print("| " + " | ".join(str(row[c]) for c in cols) + " |")
+        return
     rows = []
     for item in items:
         q = item["question"]

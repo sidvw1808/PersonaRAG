@@ -10,6 +10,7 @@ You can't ask Elon Musk, Tim Cook or Ratan Tata a question directly, but they've
 
 - **Persona RAG pipeline:** ingest blogs, YouTube videos, podcasts, PDFs, text and subtitle files → sentence-aware chunking → `bge-small` embeddings → ChromaDB (one collection per persona).
 - **Video and podcast ingestion:** YouTube captions are fetched directly; podcasts that aren't on YouTube, local audio files and videos without captions are transcribed locally with Whisper (`faster-whisper` + `yt-dlp`).
+- **Hybrid retrieval with re-ranking:** BM25 keyword search and embedding search are merged with Reciprocal Rank Fusion, then a cross-encoder re-orders the candidates. Measured on the eval: hit-rate 0.90 → 1.00, MRR 0.70 → 0.78.
 - **Inline citations:** every claim is tied to a numbered source `[n]`, and the UI shows which retrieved passages were actually cited.
 - **Grounding indicator:** model-free signals (citation coverage, retrieval similarity, invalid-citation detection) rate each answer *strong / partial / weak / ungrounded*.
 - **Interaction modes:** Ask, Career, Startup, Technical, Debate, Interview.
@@ -25,7 +26,11 @@ You can't ask Elon Musk, Tim Cook or Ratan Tata a question directly, but they've
  question ──► query expansion (uses chat history for short follow-ups)
                 │
                 ▼
-         bge-small embedding ──► ChromaDB (persona collection, cosine) ──► top-k passages
+         ┌─► bge-small embedding ──► ChromaDB (cosine) ──► top 20 ─┐
+         │                                                          ├─► RRF fusion ──► relevance gate
+         └─► BM25 keyword index ───────────────────────────► top 20 ─┘   (cosine ≥ 0.5)
+                                                                              │
+                                              cross-encoder re-ranks top 12 ──► top-k passages
                                                                               │
  persona.yaml ──► system prompt (voice, background, rules)  ◄─────────────────┤
                                                                               ▼
@@ -192,7 +197,23 @@ What the eval caught and how it was fixed:
 3. **Fabricated answers to out-of-scope questions** (an invented favourite pizza topping). When retrieval returns nothing above the similarity threshold, the prompt now explicitly tells the model to decline in character.
 4. **Evaluator bug.** "I haven't spoken about this directly, *but*..." was being scored as an abstention, although it introduces an extrapolation. The abstention detector now excludes that pattern.
 
-**Effect of growing the corpus.** Expanding the Elon Musk corpus from 61 to 211 chunks (adding a Lex Fridman transcript and TED interviews) kept hit_rate@6 at 1.00, but MRR fell from 0.90 to 0.72 and keyword recall from 1.00 to 0.89: the new long-form interviews also discuss Tesla's strategy and compete with the primary blog posts for the top rank. Cross-encoder re-ranking (see the roadmap) is the planned fix.
+### Retrieval: vector vs hybrid vs re-ranked
+
+`python -m eval.run_eval <persona> --compare` runs every retrieval mode on the same questions (no LLM calls). Elon Musk set: 20 answerable questions over 211 chunks (blog posts, Lex Fridman transcript, TED interviews, Wikiquote).
+
+| Mode | hit_rate@6 | MRR | keyword_recall | ms / query (CPU) |
+|---|---|---|---|---|
+| Vector only | 0.90 | 0.70 | 0.92 | 52 |
+| Hybrid (BM25 + vector, RRF) | 0.95 | 0.73 | 1.00 | 65 |
+| **Hybrid + cross-encoder re-rank** (default) | **1.00** | **0.78** | **1.00** | 820 |
+
+- BM25 recovers passages that use exact names and terms the embedding model under-weights (Grok, Diablo, Optimus), which fixed the vector-only misses.
+- The cross-encoder (`ms-marco-MiniLM-L-6-v2`) reads the question and passage together, so it ranks the passage that actually answers the question above ones that merely share the topic.
+- Re-ranking all ~40 fused candidates at full length cost 4.0 s per query on CPU. Capping it to the top 12 candidates truncated to 256 tokens brought that to 0.8 s with MRR 0.79 → 0.78.
+- The Mark Zuckerberg set (11 questions, 2 sources) scores 1.00 / 1.00 in every mode: it is too small to separate the methods, and will become informative as more of that corpus is ingested.
+- Choose a mode with `RETRIEVAL_MODE=vector|hybrid|hybrid_rerank` in `.env`; use `hybrid` on slow machines.
+
+**Effect of growing the corpus.** Expanding the Elon Musk corpus from 61 to 211 chunks (adding a Lex Fridman transcript and TED interviews) kept hit_rate@6 at 1.00, but MRR fell from 0.90 to 0.72 and keyword recall from 1.00 to 0.89: the new long-form interviews also discuss Tesla's strategy and compete with the primary blog posts for the top rank. This regression is what motivated the hybrid retrieval and re-ranking above.
 
 Known limits with a 3B local model: it still extrapolates on some out-of-scope questions, sometimes slips into third person, and occasionally cites a source number that wasn't provided (the grounding report flags these). A larger model is expected to do better on all three; rerun the eval with `LLM_PROVIDER=claude` to compare.
 
@@ -201,7 +222,8 @@ Known limits with a 3B local model: it still extrapolates on some out-of-scope q
 **PersonaRAG: Evidence-Grounded Persona Simulation with RAG** · Python, ChromaDB, Sentence-Transformers, Ollama, Claude API, FastAPI, Streamlit
 
 - Built a retrieval-augmented generation system that simulates public figures' documented perspectives, answering in their voice with inline citations to a per-persona corpus of blog posts, letters, transcripts and quotations.
-- Designed the ingestion pipeline (web pages, YouTube transcripts, PDFs, subtitles) with sentence-aware overlapping chunking, `bge-small` embeddings and a ChromaDB vector store; retrieval reached 100% hit-rate@6 and 0.90 MRR on a hand-labelled question set.
+- Designed the ingestion pipeline (blogs, YouTube videos, podcasts via Whisper speech-to-text, PDFs) with sentence-aware overlapping chunking, `bge-small` embeddings and a ChromaDB vector store.
+- Implemented hybrid retrieval (BM25 + dense vectors fused with Reciprocal Rank Fusion) and cross-encoder re-ranking, raising hit-rate@6 from 0.90 to 1.00 and MRR from 0.70 to 0.78, and cut re-ranking latency 5× (4.0 s → 0.8 s on CPU) by bounding the candidate pool.
 - Built an evaluation harness measuring hit-rate, MRR, citation coverage, hallucinated-citation detection, abstention accuracy and LLM-as-judge faithfulness; used it to iterate on prompts, taking cited answers from 0% to 100% on a 3B local model.
 - Added a grounding indicator, six interaction modes, conversation memory, and a multi-persona panel in which personas answer in parallel and an AI moderator compares their views.
 - Made the LLM backend pluggable (Claude API or quantized local models via Ollama running on a 4 GB GPU), served through a FastAPI REST API with NDJSON streaming and a Streamlit UI.
@@ -219,7 +241,7 @@ pytest
 - [x] Evaluation harness
 - [x] Video and podcast ingestion with Whisper fallback
 - [ ] Speaker diarization so interviewer questions are not attributed to the persona
-- [ ] Hybrid retrieval (BM25 + vectors) and cross-encoder re-ranking
+- [x] Hybrid retrieval (BM25 + vectors) and cross-encoder re-ranking
 - [ ] React front end on top of the FastAPI streaming endpoint
 - [ ] LoRA/QLoRA fine-tune of a small model on interview transcripts for conversational style (RAG keeps supplying the facts)
 - [ ] Time-aware answers ("what did they think in 2016 vs now?") using source dates
