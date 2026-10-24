@@ -55,5 +55,8 @@ WHISPER_COMPUTE = os.getenv("WHISPER_COMPUTE", "int8")
 # Transcribe a YouTube video with Whisper when its captions can't be fetched.
 WHISPER_FALLBACK = os.getenv("WHISPER_FALLBACK", "1") == "1"
 
+# Upper bound on answer length (tokens).
+MAX_ANSWER_TOKENS = int(os.getenv("MAX_ANSWER_TOKENS", "2000"))
+
 # Number of previous chat turns sent back to the model.
 HISTORY_TURNS = int(os.getenv("HISTORY_TURNS", "6"))

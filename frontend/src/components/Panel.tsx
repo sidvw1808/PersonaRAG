@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { streamPanel, type PanelAnswer, type Persona } from "../api";
+import { ApiError, streamPanel, type PanelAnswer, type Persona } from "../api";
 import type { DrawerState } from "../types";
 import { Answer } from "./Answer";
 import { GroundingBadge } from "./GroundingBadge";
@@ -42,7 +42,8 @@ export function Panel({ personas, mode, openDrawer }: Props) {
         else if (ev.type === "error") setError(ev.message);
       }
     } catch (err) {
-      if ((err as Error).name !== "AbortError") setError(`Could not reach the API: ${(err as Error).message}`);
+      if ((err as Error).name !== "AbortError")
+        setError(err instanceof ApiError ? err.message : `Could not reach the API: ${(err as Error).message}`);
     } finally {
       setRunning(false);
     }

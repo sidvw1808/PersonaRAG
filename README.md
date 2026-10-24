@@ -6,7 +6,9 @@ You can't ask Elon Musk, Tim Cook or Ratan Tata a question directly, but they've
 
 > ⚠️ This is an AI simulation built from public material. It is not the real person and does not represent their private views.
 
-![PersonaRAG chat: a cited answer from the Mark Zuckerberg persona, with the sources drawer showing the passage behind citation 1](docs/screenshot-chat.jpg)
+![PersonaRAG demo: asking Elon Musk a question, the answer streaming in with citations, and opening the cited passage](docs/demo.gif)
+
+▶ **[Watch the full 2-minute demo (MP4)](docs/demo.mp4)**: chat with citations, a grounding badge, an out-of-scope question, and a three-persona panel with a moderator. Recorded on a laptop with the local `qwen2.5:3b` model; the panel's waiting time is sped up 8×.
 
 ## Features
 
@@ -117,6 +119,26 @@ cd frontend && npm run dev          # http://localhost:5173
 ```
 
 The Streamlit app is still available for quick experiments: `streamlit run app.py`.
+
+### Back up the knowledge bases
+
+```bash
+python -m personarag.snapshot export     # data/snapshot/*.jsonl: every chunk's text and metadata
+python -m personarag.snapshot restore    # rebuild the vector store from the snapshot
+```
+
+Restoring re-embeds the text, so it works across ChromaDB versions and never re-downloads sources. It also repairs a corrupted on-disk index.
+
+### Re-record the demo video
+
+```bash
+pip install playwright imageio-ffmpeg && python -m playwright install chromium
+cd frontend && npm run build && cd ..
+uvicorn api:app --port 8000              # in another terminal
+python scripts/record_demo.py            # -> docs/demo.mp4 and docs/demo.gif
+```
+
+The script drives the real app in a headless browser (visible cursor, typed questions, on-screen captions), then edits the segments with ffmpeg.
 
 ## How videos and podcasts become knowledge
 

@@ -93,7 +93,9 @@ class PersonaEngine:
         """Returns the retrieved sources immediately, plus a token stream for the answer."""
         persona = load_persona(persona_id)
         hits = self.retrieve(persona_id, question, history)
-        tokens = self.llm.stream(system_prompt(persona), self._messages(question, hits, history, mode))
+        tokens = self.llm.stream(
+            system_prompt(persona), self._messages(question, hits, history, mode), config.MAX_ANSWER_TOKENS
+        )
         return hits, tokens
 
     def ask(
@@ -101,5 +103,7 @@ class PersonaEngine:
     ) -> Answer:
         persona = load_persona(persona_id)
         hits = self.retrieve(persona_id, question, history)
-        text = complete(self.llm, system_prompt(persona), self._messages(question, hits, history, mode))
+        text = complete(
+            self.llm, system_prompt(persona), self._messages(question, hits, history, mode), config.MAX_ANSWER_TOKENS
+        )
         return Answer(persona, question, text, hits, grounding_report(text, hits))

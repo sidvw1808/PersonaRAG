@@ -73,6 +73,15 @@ export type PanelEvent =
   | { type: "summary"; text: string }
   | { type: "error"; message: string };
 
+/** An error response from the API; `message` is the server's explanation (e.g. a rate-limit notice). */
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
 async function getJSON<T>(path: string): Promise<T> {
   const res = await fetch(BASE + path);
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
@@ -95,8 +104,14 @@ async function* streamNDJSON<T>(path: string, body: unknown, signal?: AbortSigna
     signal,
   });
   if (!res.ok || !res.body) {
-    const detail = await res.text().catch(() => "");
-    throw new Error(`${res.status} ${res.statusText} ${detail}`.trim());
+    const raw = await res.text().catch(() => "");
+    let detail = raw;
+    try {
+      detail = (JSON.parse(raw) as { detail?: string }).detail ?? raw;
+    } catch {
+      /* not JSON */
+    }
+    throw new ApiError(res.status, detail || `${res.status} ${res.statusText}`);
   }
   const reader = res.body.getReader();
   const decoder = new TextDecoder();

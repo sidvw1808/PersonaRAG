@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { streamChat, type Persona, type Turn } from "../api";
+import { ApiError, streamChat, type Persona, type Turn } from "../api";
 import { uid, type DrawerState, type Message } from "../types";
 import { Answer } from "./Answer";
 import { GroundingBadge } from "./GroundingBadge";
@@ -80,7 +80,11 @@ export function Chat({ persona, mode, messages, setMessages, drawer, openDrawer 
       patch(answerId, (m) => ({
         ...m,
         status: aborted && m.content ? "done" : "error",
-        error: aborted ? "Stopped." : `Could not reach the API: ${(err as Error).message}`,
+        error: aborted
+          ? "Stopped."
+          : err instanceof ApiError
+            ? err.message
+            : `Could not reach the API: ${(err as Error).message}`,
       }));
     } finally {
       abortRef.current = null;
