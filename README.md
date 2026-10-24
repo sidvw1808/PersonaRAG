@@ -6,6 +6,8 @@ You can't ask Elon Musk, Tim Cook or Ratan Tata a question directly, but they've
 
 > ⚠️ This is an AI simulation built from public material. It is not the real person and does not represent their private views.
 
+![PersonaRAG chat: a cited answer from the Mark Zuckerberg persona, with the sources drawer showing the passage behind citation 1](docs/screenshot-chat.jpg)
+
 ## Features
 
 - **Persona RAG pipeline:** ingest blogs, YouTube videos, podcasts, PDFs, text and subtitle files → sentence-aware chunking → `bge-small` embeddings → ChromaDB (one collection per persona).
@@ -18,7 +20,8 @@ You can't ask Elon Musk, Tim Cook or Ratan Tata a question directly, but they've
 - **Conversation memory:** follow-up questions keep context, and short follow-ups are expanded for retrieval.
 - **Pluggable LLMs:** Claude via the Anthropic API, or a local model via Ollama (runs offline on a 4 GB GPU).
 - **Evaluation harness:** retrieval hit-rate and MRR, keyword recall, citation coverage, abstention accuracy on out-of-scope questions, and optional LLM-as-judge faithfulness.
-- **Two front ends:** a Streamlit app and a FastAPI REST API with NDJSON streaming.
+- **React web app:** streaming answers, clickable citation chips that open the exact source passage, grounding badges, a live panel view where each panelist appears as they finish, and a responsive layout for phones. Built with React 19, TypeScript and Vite on top of the FastAPI streaming API.
+- **API and alternatives:** FastAPI REST API with NDJSON streaming (`/chat/stream`, `/panel/stream`) and OpenAPI docs; a Streamlit app is kept for quick experiments.
 
 ## Architecture
 
@@ -60,9 +63,14 @@ PersonaRAG/
 │   ├── sources.yaml   # URLs and YouTube videos to ingest
 │   └── raw/           # drop transcripts/PDFs here; ingested automatically
 ├── eval/              # evaluation question sets + runner
+├── frontend/          # React + TypeScript + Vite web app
+│   └── src/
+│       ├── api.ts         # typed API client and NDJSON stream reader
+│       ├── App.tsx        # layout: personas, modes, knowledge base, tabs
+│       └── components/    # Chat, Panel, Answer (citations), SourcesDrawer, GroundingBadge
 ├── tests/
-├── app.py             # Streamlit UI
-└── api.py             # FastAPI
+├── app.py             # Streamlit UI (quick experiments)
+└── api.py             # FastAPI: REST + streaming endpoints, serves the built web app
 ```
 
 ## Quick start
@@ -79,18 +87,36 @@ Pick an LLM in `.env`:
 - **Claude (best answers):** set `ANTHROPIC_API_KEY` (from console.anthropic.com). The default model is `claude-opus-5-5`; for a cheaper option, set `CLAUDE_MODEL=claude-haiku-5-5`.
 - **Local and free:** `ollama pull qwen2.5:3b`, then set `LLM_PROVIDER=ollama`.
 
-Build the knowledge bases, then run the app:
+Build the knowledge bases:
 
 ```bash
 python -m personarag.ingest --all
-streamlit run app.py
 ```
 
-Or run the API (interactive docs at http://127.0.0.1:8000/docs):
+### Run the web app
+
+One-time build of the React app (needs Node 18+):
 
 ```bash
-uvicorn api:app --reload
+cd frontend && npm install && npm run build && cd ..
 ```
+
+Then a single server runs everything. Open http://127.0.0.1:8000 for the app, or http://127.0.0.1:8000/docs for the API docs:
+
+```bash
+uvicorn api:app --port 8000
+```
+
+### Developing the frontend
+
+Run the API and the Vite dev server side by side; Vite proxies `/api/*` to port 8000 and hot-reloads on save:
+
+```bash
+uvicorn api:app --port 8000
+cd frontend && npm run dev          # http://localhost:5173
+```
+
+The Streamlit app is still available for quick experiments: `streamlit run app.py`.
 
 ## How videos and podcasts become knowledge
 
@@ -192,6 +218,10 @@ Elon Musk persona, 12 questions (10 answerable from the corpus, 2 deliberately o
 | Answerable questions wrongly declined | 0 | 0 |
 | Invalid (hallucinated) citations detected | 0 | 1 |
 
+**Current numbers** (expanded 22-question set, 275-chunk corpus, hybrid + re-rank retrieval, same `qwen2.5:3b`): every answer cites sources, citation coverage **0.68**, **0** invalid citations, 0 answerable questions wrongly declined, 1 of 2 out-of-scope questions declined.
+
+> **Scorer fix.** The original citation-coverage scorer split text on sentence boundaries *before* attaching citations, so a citation written after the full stop ("…cheaper cars. [1]") was counted as belonging to no sentence. This under-counted coverage in the table above (0.43); the fixed scorer is covered by a unit test.
+
 What the eval caught and how it was fixed:
 
 1. **No citations.** The 3B model ignored citation rules placed in the system prompt. Moving a short format reminder to the end of the user turn (recency) took cited answers from 0% to 100%.
@@ -237,7 +267,7 @@ Known limits with a 3B local model: it still extrapolates on some out-of-scope q
 - Implemented hybrid retrieval (BM25 + dense vectors fused with Reciprocal Rank Fusion) and cross-encoder re-ranking, raising hit-rate@6 from 0.90 to 1.00 and MRR from 0.70 to 0.78, and cut re-ranking latency 5× (4.0 s → 0.8 s on CPU) by bounding the candidate pool.
 - Built an evaluation harness measuring hit-rate, MRR, citation coverage, hallucinated-citation detection, abstention accuracy and LLM-as-judge faithfulness; used it to iterate on prompts, taking cited answers from 0% to 100% on a 3B local model.
 - Added a grounding indicator, six interaction modes, conversation memory, and a multi-persona panel in which personas answer in parallel and an AI moderator compares their views.
-- Made the LLM backend pluggable (Claude API or quantized local models via Ollama running on a 4 GB GPU), served through a FastAPI REST API with NDJSON streaming and a Streamlit UI.
+- Built a React + TypeScript web app on a FastAPI NDJSON streaming API: token-by-token answers, clickable citations that open the source passage, grounding badges, and a live multi-persona panel; the LLM backend is pluggable (Claude API or a quantized local model via Ollama on a 4 GB GPU).
 
 ```bash
 pytest
@@ -253,7 +283,7 @@ pytest
 - [x] Video and podcast ingestion with Whisper fallback
 - [ ] Speaker diarization so interviewer questions are not attributed to the persona
 - [x] Hybrid retrieval (BM25 + vectors) and cross-encoder re-ranking
-- [ ] React front end on top of the FastAPI streaming endpoint
+- [x] React front end on top of the FastAPI streaming endpoint
 - [ ] LoRA/QLoRA fine-tune of a small model on interview transcripts for conversational style (RAG keeps supplying the facts)
 - [ ] Time-aware answers ("what did they think in 2016 vs now?") using source dates
 

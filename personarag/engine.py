@@ -12,6 +12,7 @@ from .store import Hit, VectorStore
 
 _CITATION = re.compile(r"\[(\d+)\]")
 _SENTENCE = re.compile(r"(?<=[.!?])\s+")
+_TRAILING_CITES = re.compile(r"([.!?])\s*((?:\[\d+\]\s*)+)")
 
 
 @dataclass
@@ -32,7 +33,10 @@ def grounding_report(text: str, hits: list[Hit]) -> dict:
     """Cheap, model-free grounding signals shown in the UI and used by the evaluator."""
     cited = sorted({int(n) for n in _CITATION.findall(text)})
     valid = [n for n in cited if 0 < n <= len(hits)]
-    sentences = [s for s in _SENTENCE.split(text.strip()) if len(s.split()) >= 4]
+    # Models often write "...vehicles. [1]"; move such trailing citations inside the sentence
+    # they belong to, so the split below doesn't strand them in a fragment of their own.
+    normalized = _TRAILING_CITES.sub(r" \2\1", text.strip())
+    sentences = [s for s in _SENTENCE.split(normalized) if len(s.split()) >= 4]
     with_cite = sum(1 for s in sentences if _CITATION.search(s))
     coverage = with_cite / len(sentences) if sentences else 0.0
     top = max((h.score for h in hits), default=0.0)

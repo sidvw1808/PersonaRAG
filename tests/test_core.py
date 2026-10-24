@@ -57,3 +57,9 @@ def test_rrf_rewards_agreement_between_retrievers():
 
 def test_tokenize_drops_stopwords_and_punctuation():
     assert tokenize("Why did Tesla release the Llama-3.1 patents?") == ["tesla", "release", "llama", "3", "1", "patents"]
+
+
+def test_citation_after_full_stop_counts_for_that_sentence():
+    hits = [_hit(0.8), _hit(0.7)]
+    g = grounding_report("Tesla started with an expensive sports car to fund cheaper cars. [1] It worked out well in the end. [2]", hits)
+    assert g["citation_coverage"] == 1.0 and g["cited"] == [1, 2]
