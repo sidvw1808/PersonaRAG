@@ -1,0 +1,501 @@
+{
+  "name": "PersonaRAG",
+  "description": "An evidence-grounded conversational AI that uses Retrieval-Augmented Generation to simulate the publicly documented perspectives of public figures, answering in their voice with inline citations. It includes a Python RAG pipeline (hybrid BM25 + embedding retrieval with ChromaDB), a FastAPI backend, and a React web frontend.",
+  "languages": [
+    "css",
+    "html",
+    "javascript",
+    "json",
+    "markdown",
+    "python",
+    "toml",
+    "typescript",
+    "yaml"
+  ],
+  "frameworks": [
+    "FastAPI",
+    "Pytest",
+    "React",
+    "Streamlit",
+    "Uvicorn",
+    "Vite"
+  ],
+  "files": [
+    {
+      "path": ".streamlit/config.toml",
+      "language": "toml",
+      "sizeLines": 4,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".ua/config.json",
+      "language": "json",
+      "sizeLines": 1,
+      "fileCategory": "config"
+    },
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "sizeLines": 316,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "api.py",
+      "language": "python",
+      "sizeLines": 196,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app.py",
+      "language": "python",
+      "sizeLines": 135,
+      "fileCategory": "code"
+    },
+    {
+      "path": "conftest.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "env.template",
+      "language": "template",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "eval/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "eval/elon_musk.yaml",
+      "language": "yaml",
+      "sizeLines": 94,
+      "fileCategory": "config"
+    },
+    {
+      "path": "eval/mark_zuckerberg.yaml",
+      "language": "yaml",
+      "sizeLines": 53,
+      "fileCategory": "config"
+    },
+    {
+      "path": "eval/run_eval.py",
+      "language": "python",
+      "sizeLines": 173,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/.env.production",
+      "language": "config",
+      "sizeLines": 2,
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend/README.md",
+      "language": "markdown",
+      "sizeLines": 15,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "frontend/eslint.config.js",
+      "language": "javascript",
+      "sizeLines": 28,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/index.html",
+      "language": "html",
+      "sizeLines": 14,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/package.json",
+      "language": "json",
+      "sizeLines": 29,
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend/src/App.tsx",
+      "language": "typescript",
+      "sizeLines": 217,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/api.ts",
+      "language": "typescript",
+      "sizeLines": 141,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/Answer.tsx",
+      "language": "typescript",
+      "sizeLines": 71,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/Chat.tsx",
+      "language": "typescript",
+      "sizeLines": 199,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/GroundingBadge.tsx",
+      "language": "typescript",
+      "sizeLines": 22,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/Panel.tsx",
+      "language": "typescript",
+      "sizeLines": 162,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/SourcesDrawer.tsx",
+      "language": "typescript",
+      "sizeLines": 78,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/main.tsx",
+      "language": "typescript",
+      "sizeLines": 10,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/styles.css",
+      "language": "css",
+      "sizeLines": 202,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/types.ts",
+      "language": "typescript",
+      "sizeLines": 20,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/vite-env.d.ts",
+      "language": "typescript",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/tsconfig.app.json",
+      "language": "json",
+      "sizeLines": 27,
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend/tsconfig.json",
+      "language": "json",
+      "sizeLines": 7,
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend/tsconfig.node.json",
+      "language": "json",
+      "sizeLines": 25,
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend/vite.config.ts",
+      "language": "typescript",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "personarag/__init__.py",
+      "language": "python",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "personarag/chunking.py",
+      "language": "python",
+      "sizeLines": 80,
+      "fileCategory": "code"
+    },
+    {
+      "path": "personarag/config.py",
+      "language": "python",
+      "sizeLines": 62,
+      "fileCategory": "code"
+    },
+    {
+      "path": "personarag/engine.py",
+      "language": "python",
+      "sizeLines": 109,
+      "fileCategory": "code"
+    },
+    {
+      "path": "personarag/ingest.py",
+      "language": "python",
+      "sizeLines": 67,
+      "fileCategory": "code"
+    },
+    {
+      "path": "personarag/llm.py",
+      "language": "python",
+      "sizeLines": 99,
+      "fileCategory": "code"
+    },
+    {
+      "path": "personarag/loaders.py",
+      "language": "python",
+      "sizeLines": 218,
+      "fileCategory": "code"
+    },
+    {
+      "path": "personarag/panel.py",
+      "language": "python",
+      "sizeLines": 29,
+      "fileCategory": "code"
+    },
+    {
+      "path": "personarag/personas.py",
+      "language": "python",
+      "sizeLines": 42,
+      "fileCategory": "code"
+    },
+    {
+      "path": "personarag/prompts.py",
+      "language": "python",
+      "sizeLines": 94,
+      "fileCategory": "code"
+    },
+    {
+      "path": "personarag/snapshot.py",
+      "language": "python",
+      "sizeLines": 52,
+      "fileCategory": "code"
+    },
+    {
+      "path": "personarag/store.py",
+      "language": "python",
+      "sizeLines": 211,
+      "fileCategory": "code"
+    },
+    {
+      "path": "personarag/transcribe.py",
+      "language": "python",
+      "sizeLines": 48,
+      "fileCategory": "code"
+    },
+    {
+      "path": "personas/elon_musk/persona.yaml",
+      "language": "yaml",
+      "sizeLines": 26,
+      "fileCategory": "config"
+    },
+    {
+      "path": "personas/elon_musk/sources.yaml",
+      "language": "yaml",
+      "sizeLines": 88,
+      "fileCategory": "config"
+    },
+    {
+      "path": "personas/mark_zuckerberg/persona.yaml",
+      "language": "yaml",
+      "sizeLines": 24,
+      "fileCategory": "config"
+    },
+    {
+      "path": "personas/mark_zuckerberg/sources.yaml",
+      "language": "yaml",
+      "sizeLines": 55,
+      "fileCategory": "config"
+    },
+    {
+      "path": "personas/ratan_tata/persona.yaml",
+      "language": "yaml",
+      "sizeLines": 21,
+      "fileCategory": "config"
+    },
+    {
+      "path": "personas/ratan_tata/sources.yaml",
+      "language": "yaml",
+      "sizeLines": 32,
+      "fileCategory": "config"
+    },
+    {
+      "path": "personas/tim_cook/persona.yaml",
+      "language": "yaml",
+      "sizeLines": 24,
+      "fileCategory": "config"
+    },
+    {
+      "path": "personas/tim_cook/sources.yaml",
+      "language": "yaml",
+      "sizeLines": 30,
+      "fileCategory": "config"
+    },
+    {
+      "path": "requirements.txt",
+      "language": "txt",
+      "sizeLines": 19,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "scripts/record_demo.py",
+      "language": "python",
+      "sizeLines": 250,
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests/test_core.py",
+      "language": "python",
+      "sizeLines": 65,
+      "fileCategory": "code"
+    }
+  ],
+  "totalFiles": 55,
+  "filteredByIgnore": 0,
+  "estimatedComplexity": "moderate",
+  "importMap": {
+    ".streamlit/config.toml": [],
+    ".ua/config.json": [],
+    "README.md": [],
+    "api.py": [
+      "personarag/__init__.py",
+      "personarag/config.py",
+      "personarag/engine.py",
+      "personarag/llm.py",
+      "personarag/panel.py",
+      "personarag/personas.py",
+      "personarag/prompts.py"
+    ],
+    "app.py": [
+      "personarag/__init__.py",
+      "personarag/config.py",
+      "personarag/engine.py",
+      "personarag/panel.py",
+      "personarag/personas.py",
+      "personarag/prompts.py"
+    ],
+    "conftest.py": [],
+    "env.template": [],
+    "eval/__init__.py": [],
+    "eval/elon_musk.yaml": [],
+    "eval/mark_zuckerberg.yaml": [],
+    "eval/run_eval.py": [
+      "personarag/engine.py",
+      "personarag/llm.py"
+    ],
+    "frontend/.env.production": [],
+    "frontend/README.md": [],
+    "frontend/eslint.config.js": [],
+    "frontend/index.html": [],
+    "frontend/package.json": [],
+    "frontend/src/App.tsx": [
+      "frontend/src/api.ts",
+      "frontend/src/components/Chat.tsx",
+      "frontend/src/components/Panel.tsx",
+      "frontend/src/components/SourcesDrawer.tsx",
+      "frontend/src/types.ts"
+    ],
+    "frontend/src/api.ts": [],
+    "frontend/src/components/Answer.tsx": [],
+    "frontend/src/components/Chat.tsx": [
+      "frontend/src/api.ts",
+      "frontend/src/components/Answer.tsx",
+      "frontend/src/components/GroundingBadge.tsx",
+      "frontend/src/types.ts"
+    ],
+    "frontend/src/components/GroundingBadge.tsx": [
+      "frontend/src/api.ts"
+    ],
+    "frontend/src/components/Panel.tsx": [
+      "frontend/src/api.ts",
+      "frontend/src/components/Answer.tsx",
+      "frontend/src/components/GroundingBadge.tsx",
+      "frontend/src/types.ts"
+    ],
+    "frontend/src/components/SourcesDrawer.tsx": [
+      "frontend/src/api.ts"
+    ],
+    "frontend/src/main.tsx": [
+      "frontend/src/App.tsx",
+      "frontend/src/styles.css"
+    ],
+    "frontend/src/styles.css": [],
+    "frontend/src/types.ts": [
+      "frontend/src/api.ts"
+    ],
+    "frontend/src/vite-env.d.ts": [],
+    "frontend/tsconfig.app.json": [],
+    "frontend/tsconfig.json": [],
+    "frontend/tsconfig.node.json": [],
+    "frontend/vite.config.ts": [],
+    "personarag/__init__.py": [],
+    "personarag/chunking.py": [
+      "personarag/config.py",
+      "personarag/loaders.py"
+    ],
+    "personarag/config.py": [],
+    "personarag/engine.py": [
+      "personarag/config.py",
+      "personarag/llm.py",
+      "personarag/personas.py",
+      "personarag/prompts.py",
+      "personarag/store.py"
+    ],
+    "personarag/ingest.py": [
+      "personarag/chunking.py",
+      "personarag/config.py",
+      "personarag/loaders.py",
+      "personarag/personas.py",
+      "personarag/store.py"
+    ],
+    "personarag/llm.py": [
+      "personarag/config.py"
+    ],
+    "personarag/loaders.py": [
+      "personarag/config.py"
+    ],
+    "personarag/panel.py": [
+      "personarag/engine.py",
+      "personarag/llm.py",
+      "personarag/prompts.py"
+    ],
+    "personarag/personas.py": [
+      "personarag/config.py"
+    ],
+    "personarag/prompts.py": [
+      "personarag/personas.py",
+      "personarag/store.py"
+    ],
+    "personarag/snapshot.py": [
+      "personarag/chunking.py",
+      "personarag/config.py",
+      "personarag/personas.py",
+      "personarag/store.py"
+    ],
+    "personarag/store.py": [
+      "personarag/chunking.py",
+      "personarag/config.py"
+    ],
+    "personarag/transcribe.py": [
+      "personarag/config.py"
+    ],
+    "personas/elon_musk/persona.yaml": [],
+    "personas/elon_musk/sources.yaml": [],
+    "personas/mark_zuckerberg/persona.yaml": [],
+    "personas/mark_zuckerberg/sources.yaml": [],
+    "personas/ratan_tata/persona.yaml": [],
+    "personas/ratan_tata/sources.yaml": [],
+    "personas/tim_cook/persona.yaml": [],
+    "personas/tim_cook/sources.yaml": [],
+    "requirements.txt": [],
+    "scripts/record_demo.py": [],
+    "tests/test_core.py": [
+      "personarag/chunking.py",
+      "personarag/engine.py",
+      "personarag/loaders.py",
+      "personarag/store.py"
+    ]
+  }
+}

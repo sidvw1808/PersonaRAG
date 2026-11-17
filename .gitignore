@@ -6,3 +6,7 @@ data/
 personas/*/cache/
 eval/results/
 .pytest_cache/
+
+# Understand-Anything scratch space (the graph itself in .ua/ is committed)
+.ua/.trash-*/
+.ua/tmp/

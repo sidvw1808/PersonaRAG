@@ -1,0 +1,1636 @@
+{
+  "version": 1,
+  "generatedAt": "2026-11-17T08:16:18.900Z",
+  "files": {
+    "README.md": {
+      "overview": "The project README and the entry point of the guided tour. It explains what PersonaRAG is (an evidence-grounded simulation of public figures' documented views), lists its features, draws the retrieval-to-generation architecture, and documents how to install, ingest, run, back up and evaluate the system. It also records measured evaluation results and the lessons learned from them, which explain why defaults such as `hybrid_rerank` retrieval were chosen.",
+      "sections": [
+        {
+          "title": "Pitch and disclaimer",
+          "lineRange": [
+            1,
+            11
+          ],
+          "explanation": "Introduces the core idea: collect a person's public material into a per-persona knowledge base, retrieve relevant passages, and have an LLM answer in that person's voice **with citations**. The disclaimer that this is a simulation, not the real person, is an ethical constraint that shows up again in the prompts and UI. The demo links show the end-to-end experience the rest of the code builds toward.",
+          "tourOrder": 1
+        },
+        {
+          "title": "Feature list",
+          "lineRange": [
+            13,
+            26
+          ],
+          "explanation": "A compact map of the whole system: ingestion (blogs, YouTube, podcasts via Whisper), sentence-aware chunking, `bge-small` embeddings in ChromaDB, hybrid BM25 + vector retrieval with cross-encoder re-ranking, inline `[n]` citations, a model-free grounding indicator, interaction modes, panel mode, pluggable LLMs and an eval harness. Each bullet corresponds to one or more modules covered in later tour steps.",
+          "tourOrder": 1
+        },
+        {
+          "title": "Architecture diagrams",
+          "lineRange": [
+            28,
+            76
+          ],
+          "explanation": "The first diagram traces a question through query expansion, parallel embedding and BM25 retrieval, RRF fusion, a cosine relevance gate, cross-encoder re-ranking, prompt assembly and streaming generation, ending in a grounding report. The second is a directory map tying each file in `personarag/`, `personas/<id>/`, `frontend/` and the two entry points to its role. Use it as the table of contents for the tour.",
+          "tourOrder": 1
+        },
+        {
+          "title": "Quick start and operations",
+          "lineRange": [
+            78,
+            141
+          ],
+          "explanation": "Step-by-step setup: create a venv, install requirements, copy `env.template` to `.env`, choose Claude or a local Ollama model, then build knowledge bases with `python -m personarag.ingest --all`. It shows how FastAPI serves both the API and the built React app, how to run Vite alongside for frontend development, and how `personarag.snapshot` exports/restores the knowledge bases without re-downloading sources.",
+          "tourOrder": 1
+        },
+        {
+          "title": "How media becomes text",
+          "lineRange": [
+            143,
+            174
+          ],
+          "explanation": "Clarifies a key design principle: the LLM only ever reads text, so videos and podcasts are transcribed at ingestion time (YouTube captions first, otherwise `yt-dlp` + Whisper) and cached under `personas/<id>/cache/`. It lists honest limitations such as missing speaker labels in captions and auto-caption quality, plus the current corpus per persona.",
+          "tourOrder": 1
+        },
+        {
+          "title": "Adding personas and sources",
+          "lineRange": [
+            176,
+            207
+          ],
+          "explanation": "Explains that personas are pure data: a `persona.yaml` profile plus a `sources.yaml` manifest, with optional files dropped into `raw/` (which may carry YAML front matter). It warns to use only the person's own words, because articles *about* someone would be voiced in the first person as if they had said it.",
+          "tourOrder": 1
+        },
+        {
+          "title": "Evaluation and measured results",
+          "lineRange": [
+            209,
+            281
+          ],
+          "explanation": "Documents the eval metrics (hit rate, MRR, keyword recall, citation coverage, invalid citations, abstention accuracy, faithfulness) and real results. The narrative of what the eval caught (moving the citation reminder to the end of the user turn, removing a copied example, a scorer bug, mislabeled questions) is the justification for many choices in `prompts.py`, `store.py` and the default `RETRIEVAL_MODE`.",
+          "tourOrder": 1
+        },
+        {
+          "title": "Resume, roadmap and ethics",
+          "lineRange": [
+            283,
+            316
+          ],
+          "explanation": "Summarizes the project as resume bullets, lists completed and planned roadmap items (speaker diarization, LoRA fine-tuning, time-aware answers), and restates the ethics rules: public material only, traceable answers, simulation labelling, and abstention when sources don't cover a question.",
+          "tourOrder": 1
+        }
+      ]
+    },
+    "personarag/config.py": {
+      "overview": "Central configuration module and the most depended-upon file in the project. It loads `.env` from the project root and exposes plain module-level constants for paths, embedding and re-ranking models, chunk sizes, retrieval mode, similarity thresholds, LLM provider settings, Whisper settings and history length. Every value has a sensible default and can be overridden via environment variables, which is the subject of tour step 2.",
+      "sections": [
+        {
+          "title": "Root path and .env loading",
+          "lineRange": [
+            1,
+            12
+          ],
+          "explanation": "`ROOT` is computed from this file's location (two levels up), so paths work regardless of the current working directory. `load_dotenv(ROOT / \".env\")` runs at import time, which means any module importing `config` sees `.env` values before reading `os.getenv`. `PERSONAS_DIR` and `DB_DIR` define where persona data and the ChromaDB store live.",
+          "tourOrder": 2
+        },
+        {
+          "title": "Embedding settings",
+          "lineRange": [
+            14,
+            19
+          ],
+          "explanation": "`EMBED_MODEL` defaults to `BAAI/bge-small-en-v1.5`, chosen because it runs on CPU and handles 512-token passages. `EMBED_QUERY_PREFIX` is the instruction bge models expect on *queries only* (not passages), which measurably improves retrieval; it is kept configurable in case a different embedding model is used.",
+          "tourOrder": 2
+        },
+        {
+          "title": "Chunking sizes",
+          "lineRange": [
+            21,
+            23
+          ],
+          "explanation": "Chunk size is measured in words rather than tokens for simplicity: about 300 words stays safely under bge's 512-token window. The 50-word overlap is consumed by `chunking.py` to carry trailing sentences into the next chunk.",
+          "tourOrder": 2
+        },
+        {
+          "title": "Retrieval tuning",
+          "lineRange": [
+            25,
+            37
+          ],
+          "explanation": "`RETRIEVAL_MODE` selects `vector`, `hybrid` (BM25 + embeddings fused with RRF) or the default `hybrid_rerank`. `CANDIDATES`, `RERANK_POOL` and `RERANK_MAX_TOKENS` bound how much work the cross-encoder does, which the README credits with cutting re-ranking latency from 4.0 s to 0.8 s. `MIN_SIMILARITY` is the cosine relevance gate that lets the system detect out-of-scope questions and abstain.",
+          "tourOrder": 2
+        },
+        {
+          "title": "LLM provider selection",
+          "lineRange": [
+            39,
+            48
+          ],
+          "explanation": "If `LLM_PROVIDER` is unset, the provider is picked automatically: Claude when `ANTHROPIC_API_KEY` exists, otherwise the free local Ollama model. Boolean flags such as `CLAUDE_FALLBACKS` and `OLLAMA_THINK` are parsed with the simple `== \"1\"` convention. Claude effort and model, and Ollama URL and model, are all overridable.",
+          "tourOrder": 2
+        },
+        {
+          "title": "Whisper and generation limits",
+          "lineRange": [
+            50,
+            62
+          ],
+          "explanation": "Whisper settings (`base.en` on CPU with `int8` compute by default) control speed versus accuracy for transcription. `WHISPER_FALLBACK` decides whether caption-less YouTube videos get transcribed; note that `ingest.py --no-whisper` mutates this module attribute at runtime. `MAX_ANSWER_TOKENS` caps answer length and `HISTORY_TURNS` limits how much chat history is replayed to the model.",
+          "tourOrder": 2
+        }
+      ]
+    },
+    "env.template": {
+      "overview": "A template for the `.env` file that `config.py` loads at import time. Users copy it to `.env` and fill in values to choose an LLM backend and tune retrieval. It exposes only the most commonly changed settings; everything else falls back to defaults in `config.py`.",
+      "sections": [
+        {
+          "title": "LLM backend settings",
+          "lineRange": [
+            1,
+            13
+          ],
+          "explanation": "Documents the two backends: Claude via `ANTHROPIC_API_KEY` and `CLAUDE_MODEL`/`CLAUDE_EFFORT`, or a local Ollama model. `LLM_PROVIDER` is left commented out on purpose, because `config.py` auto-selects Claude when an API key is present and Ollama otherwise. The note about a 4 GB GPU explains the `qwen2.5:3b` default.",
+          "tourOrder": 2
+        },
+        {
+          "title": "Retrieval tuning",
+          "lineRange": [
+            15,
+            19
+          ],
+          "explanation": "Exposes `TOP_K`, `MIN_SIMILARITY` and the chunking sizes, with the same defaults as `config.py`. Changing chunk sizes only takes effect after re-running ingestion, since chunks are computed once and stored in ChromaDB.",
+          "tourOrder": 2
+        }
+      ]
+    },
+    "requirements.txt": {
+      "overview": "The Python dependency list for the backend. It pulls CPU-only PyTorch from the PyTorch index to keep installs small, then lists the libraries for embeddings, vector storage, APIs, UIs, ingestion, transcription and keyword search. Reading it is a quick way to see the project's technology stack, as tour step 2 suggests.",
+      "sections": [
+        {
+          "title": "CPU-only PyTorch",
+          "lineRange": [
+            1,
+            3
+          ],
+          "explanation": "`--extra-index-url` points pip at the CPU wheel index so `torch` installs without CUDA libraries, which are very large. The comment tells GPU users to install torch from pytorch.org first so pip won't replace it.",
+          "tourOrder": 2
+        },
+        {
+          "title": "Runtime libraries",
+          "lineRange": [
+            4,
+            19
+          ],
+          "explanation": "Groups by role: `anthropic` for Claude; `sentence-transformers`, `chromadb` and `rank_bm25` for embeddings, the vector store and BM25 hybrid retrieval; `fastapi`, `uvicorn` and `streamlit` for the two front doors; `pyyaml`, `python-dotenv` for configuration; `pypdf`, `trafilatura`, `requests`, `youtube-transcript-api`, `faster-whisper` and `yt-dlp` for ingestion; and `pytest` for tests. Versions are mostly unpinned, except `youtube-transcript-api>=1.0`, whose newer instance-based API (`YouTubeTranscriptApi().fetch`) is used in `loaders.py`.",
+          "tourOrder": 2
+        }
+      ]
+    },
+    "personarag/personas.py": {
+      "overview": "Defines the `Persona` data model and loads persona profiles from `personas/<id>/persona.yaml`. It is the bridge between persona data files and the rest of the code: the engine and prompts read the profile fields, and ingestion uses `Persona.dir` to find sources. This is the code half of tour step 3, \"Personas as Data\".",
+      "sections": [
+        {
+          "title": "Persona dataclass",
+          "lineRange": [
+            1,
+            25
+          ],
+          "explanation": "A plain `@dataclass` mirrors the keys in `persona.yaml`: name, tagline, avatar, background, domains, communication style and known positions. Mutable list defaults use `field(default_factory=list)` to avoid the shared-mutable-default pitfall. The `dir` property derives the persona folder from `PERSONAS_DIR` and the id, so no path is stored in the YAML.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Loading one persona",
+          "lineRange": [
+            27,
+            34
+          ],
+          "explanation": "`load_persona` reads the YAML with `yaml.safe_load`, injects the folder name as `id`, and then filters keys against `Persona.__dataclass_fields__`. That filter makes loading tolerant of extra keys in the YAML (they're silently ignored rather than raising a `TypeError`). A missing profile raises a clear `FileNotFoundError`.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Discovering all personas",
+          "lineRange": [
+            37,
+            42
+          ],
+          "explanation": "`list_personas` scans `personas/` in sorted order and treats any subfolder with a `persona.yaml` as a persona. Adding a new persona therefore requires no code changes, only a new folder, which is the \"personas as data\" principle.",
+          "tourOrder": 3
+        }
+      ]
+    },
+    "personas/elon_musk/persona.yaml": {
+      "overview": "The profile for the Elon Musk persona, loaded by `personas.py` into a `Persona` object. Its fields feed the system prompt that tells the LLM whose documented voice to adopt, what background to assume and which positions are known. It contains no retrieved evidence itself; facts in answers must come from the sources ingested via `sources.yaml`.",
+      "sections": [
+        {
+          "title": "Identity and background",
+          "lineRange": [
+            1,
+            8
+          ],
+          "explanation": "`name`, `tagline` and `avatar` are display fields used by the UI. `background` is a YAML block scalar (`|`) so it can span multiple lines; it gives the model biographical context to frame answers.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Domains of expertise",
+          "lineRange": [
+            9,
+            14
+          ],
+          "explanation": "A list of topics the persona is known to speak about. This helps the model and UI convey where the persona's corpus is likely to have coverage.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Communication style",
+          "lineRange": [
+            15,
+            21
+          ],
+          "explanation": "Describes how the person tends to talk: first-principles reasoning, probability estimates, dry humour, short sentences and characteristic phrases. This drives the voice of generated answers, while the citations constrain the content.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Known positions",
+          "lineRange": [
+            22,
+            26
+          ],
+          "explanation": "Short statements of well-documented views. They give the model a stable summary of the persona's stances, complementing the retrieved passages that provide citable evidence.",
+          "tourOrder": 3
+        }
+      ]
+    },
+    "personas/elon_musk/sources.yaml": {
+      "overview": "The source manifest for the Elon Musk knowledge base, consumed by `load_persona_sources` in `loaders.py`. Each entry names a source type (`url`, `youtube`, `file` or `audio`) plus optional metadata like `source_id`, title, date and kind, which flows into chunk metadata and later appears in citations. Together with `persona.yaml` it defines a persona entirely through data.",
+      "sections": [
+        {
+          "title": "Header documentation",
+          "lineRange": [
+            1,
+            12
+          ],
+          "explanation": "Explains the supported entry types and optional fields, notes that supported files in `raw/` are ingested automatically too, and gives the re-ingest command. Note the comment lists `url`, `youtube` and `file`; the `audio` type is shown later in commented examples.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Tesla blog posts",
+          "lineRange": [
+            13,
+            34
+          ],
+          "explanation": "Three blog posts loaded through Wayback Machine `id_` URLs because tesla.com blocks scripts; the `id_` form returns the original page without the archive toolbar. Each has an explicit stable `source_id` so citations and eval labels don't change if the page title changes, and dates are quoted strings so YAML keeps them as text.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Quotations and podcast transcript",
+          "lineRange": [
+            36,
+            49
+          ],
+          "explanation": "Wikiquote provides curated quotes each tied to an original source, and the Lex Fridman transcript page is preferred over the YouTube video because it has speaker labels, avoiding the interviewer-attribution problem described in the README.",
+          "tourOrder": 3
+        },
+        {
+          "title": "YouTube talks and interviews",
+          "lineRange": [
+            51,
+            77
+          ],
+          "explanation": "`youtube` entries use the video `id` (the part after `watch?v=`). `loaders.py` fetches captions for these and falls back to Whisper if captions are unavailable; it also fills in the YouTube URL and a default kind.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Commented examples",
+          "lineRange": [
+            79,
+            88
+          ],
+          "explanation": "Templates for an `audio` source (a podcast page or MP3 transcribed locally) and for forcing Whisper on a video with poor auto-captions via `whisper: true`. These document optional behaviors without enabling them.",
+          "tourOrder": 3
+        }
+      ]
+    },
+    "personarag/ingest.py": {
+      "overview": "The command-line entry point that builds a persona's knowledge base: load sources, chunk them, and add the chunks to the vector store. It orchestrates `loaders.py`, `chunking.py` and `store.py` and reports document, word and chunk counts plus any skipped sources. This is the driver for tour step 4 and the command the README tells you to run after setup.",
+      "sections": [
+        {
+          "title": "Module docstring and imports",
+          "lineRange": [
+            1,
+            14
+          ],
+          "explanation": "The docstring doubles as CLI help text (it is passed to `argparse` as the description). Imports show the pipeline's pieces: `load_persona_sources`, `chunk_document`, `VectorStore` and the persona helpers. `config` is imported as a module so its attributes can be modified at runtime.",
+          "tourOrder": 4
+        },
+        {
+          "title": "ingest pipeline function",
+          "lineRange": [
+            17,
+            33
+          ],
+          "explanation": "Loads the persona, gathers documents and errors, and flattens chunks from every document with a nested comprehension. By default it resets the persona's collection before adding, so a re-ingest rebuilds rather than duplicating chunks. It returns a summary dict rather than printing, which keeps it reusable from other code such as tests or APIs.",
+          "tourOrder": 4
+        },
+        {
+          "title": "CLI argument handling",
+          "lineRange": [
+            36,
+            50
+          ],
+          "explanation": "Accepts a persona id or `--all`, plus `--append` to keep existing chunks and `--no-whisper` to skip transcription. `--no-whisper` works by setting `config.WHISPER_FALLBACK = False`; this works because `loaders.py` reads `config.WHISPER_FALLBACK` at call time via the module reference instead of importing the value directly.",
+          "tourOrder": 4
+        },
+        {
+          "title": "Run and report",
+          "lineRange": [
+            52,
+            67
+          ],
+          "explanation": "Creates one `VectorStore` shared across personas, then ingests each and prints a summary line, each skipped source, and a hint when no text was found. The `if __name__ == \"__main__\"` guard supports running as `python -m personarag.ingest`.",
+          "tourOrder": 4
+        }
+      ]
+    },
+    "personarag/loaders.py": {
+      "overview": "Converts raw sources (local text, subtitle, PDF and audio files, web pages, YouTube videos and podcasts) into plain-text `Document` objects with metadata. Network fetches are cached as JSON under `personas/<id>/cache/` so re-ingesting never re-downloads. `load_persona_sources` reads `sources.yaml` and the `raw/` folder and isolates failures so one bad source doesn't stop the rest; this is the core of tour step 4.",
+      "sections": [
+        {
+          "title": "Supported extensions and Document",
+          "lineRange": [
+            1,
+            25
+          ],
+          "explanation": "Extension sets classify files into text, subtitle, audio and PDF, and their union defines what gets picked up from `raw/`. `Document` is a minimal dataclass of text plus a metadata dict (source_id, title, kind, date, url) that flows into every chunk and ultimately into citations.",
+          "tourOrder": 4
+        },
+        {
+          "title": "Text helpers",
+          "lineRange": [
+            28,
+            53
+          ],
+          "explanation": "`_slug` produces filesystem- and id-safe identifiers capped at 60 chars. `_split_front_matter` lets a `.txt`/`.md` file carry its own metadata in a `---` YAML header and falls back gracefully on malformed YAML. `_strip_subtitles` removes WEBVTT headers, cue numbers, timestamps and inline tags, then drops consecutive duplicate lines because subtitle cues often repeat text.",
+          "tourOrder": 4
+        },
+        {
+          "title": "Loading local files",
+          "lineRange": [
+            56,
+            80
+          ],
+          "explanation": "Dispatches by extension: audio is transcribed with Whisper, PDFs are extracted page by page with `pypdf`, and text/subtitle files are read with front matter parsed. Heavy dependencies are imported lazily inside branches so they're only required when used. Metadata is merged in priority order: derived defaults, then front matter, then explicit `sources.yaml` metadata.",
+          "tourOrder": 4
+        },
+        {
+          "title": "JSON cache helper",
+          "lineRange": [
+            83,
+            90
+          ],
+          "explanation": "`_cached` stores the result of any `fetch` callable under a SHA-1 hash of its key. This simple memoization-to-disk pattern makes expensive downloads and transcriptions one-time costs and lets ingestion be re-run freely.",
+          "tourOrder": 4
+        },
+        {
+          "title": "Fetching web pages",
+          "lineRange": [
+            93,
+            110
+          ],
+          "explanation": "Uses `trafilatura` to download a page and extract the main article text (without comments or tables) plus title and date metadata. Explicit `RuntimeError`s for failed downloads or empty extraction become per-source error messages upstream.",
+          "tourOrder": 4
+        },
+        {
+          "title": "Fetching YouTube transcripts",
+          "lineRange": [
+            113,
+            134
+          ],
+          "explanation": "Tries captions first in several English variants and records whether they were auto-generated. If captions fail and `config.WHISPER_FALLBACK` is on, it downloads the audio and transcribes it; otherwise it raises. The cache key includes the `whisper`/`auto` mode, so forcing Whisper produces a separate cache entry rather than reusing caption text.",
+          "tourOrder": 4
+        },
+        {
+          "title": "Fetching audio sources",
+          "lineRange": [
+            137,
+            149
+          ],
+          "explanation": "Handles podcast pages, direct audio URLs and local audio paths (resolved relative to the persona folder), always transcribing with Whisper. Results are cached by source string like the other fetchers.",
+          "tourOrder": 4
+        },
+        {
+          "title": "Loading a persona's sources",
+          "lineRange": [
+            152,
+            218
+          ],
+          "explanation": "Reads `sources.yaml`, builds metadata from each entry (excluding control keys), and dispatches by `type`. Every entry is wrapped in `try/except` that records an error and continues, so one bad URL never aborts ingestion. Files listed explicitly are tracked in `listed_files` so the `raw/` scan doesn't load them twice, and documents with empty text are filtered out at the end.",
+          "tourOrder": 4
+        }
+      ]
+    },
+    "personarag/transcribe.py": {
+      "overview": "Speech-to-text for sources that have no text, such as podcast audio and videos without captions. It downloads audio with `yt-dlp` and transcribes it with `faster-whisper`, both imported lazily so they stay optional. `loaders.py` calls into this module when it needs a transcript, as described in tour step 4.",
+      "sections": [
+        {
+          "title": "Docstring and cached model",
+          "lineRange": [
+            1,
+            21
+          ],
+          "explanation": "The docstring sketches the pipeline (URL -> yt-dlp -> audio -> faster-whisper -> transcript). `_model` is wrapped in `lru_cache(maxsize=1)` so the Whisper model is loaded once per process and reused for every file, since loading is slow. Model size, device and compute type come from `config`.",
+          "tourOrder": 4
+        },
+        {
+          "title": "Downloading audio",
+          "lineRange": [
+            24,
+            38
+          ],
+          "explanation": "Configures `yt-dlp` to prefer small audio-only formats (m4a first) and writes to a caller-provided directory. The comment notes no ffmpeg conversion is needed because Whisper decodes these formats directly. `noplaylist` avoids accidentally downloading a whole playlist from a URL.",
+          "tourOrder": 4
+        },
+        {
+          "title": "Transcribing",
+          "lineRange": [
+            41,
+            48
+          ],
+          "explanation": "`transcribe_file` runs Whisper with voice-activity detection (`vad_filter`) to skip silence and `beam_size=1` (greedy decoding) for speed, then joins segment texts. `transcribe_url` downloads into a `TemporaryDirectory` so the audio file is deleted automatically after transcription; only the text is kept (and cached upstream).",
+          "tourOrder": 4
+        }
+      ]
+    },
+    "personarag/chunking.py": {
+      "overview": "Splits each `Document` into overlapping, sentence-aligned chunks of roughly `CHUNK_WORDS` words, carrying the source metadata into every chunk so it can be cited later. Chunks end on sentence boundaries so retrieved passages don't start or stop mid-thought, and the overlap keeps ideas that straddle a boundary retrievable from either side. This is the first half of tour step 5.",
+      "sections": [
+        {
+          "title": "Docstring, imports and Chunk",
+          "lineRange": [
+            1,
+            21
+          ],
+          "explanation": "The docstring states the two design goals: sentence-boundary chunks and overlap. `_SENTENCE_END` is a regex that splits after `.`, `!` or `?` followed by whitespace, but only when the next character looks like a sentence start (quote, capital letter, digit or parenthesis), which avoids many false splits. `Chunk` holds an id, text and metadata.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Sentence splitting with fallback",
+          "lineRange": [
+            24,
+            38
+          ],
+          "explanation": "Whitespace is normalized first, then the text is split into sentences. Because auto-generated transcripts often have no punctuation, a single \"sentence\" can be thousands of words; any sentence longer than `CHUNK_WORDS` is broken into windows of half that size so it can still be packed into chunks.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Packing sentences into chunks",
+          "lineRange": [
+            41,
+            67
+          ],
+          "explanation": "Greedily appends sentences until adding the next would exceed `max_words`, then emits the chunk. It walks backwards over the emitted sentences to carry up to `overlap_words` worth of trailing sentences into the next chunk. The final tail is only appended if it is not already contained in the previous chunk, preventing a duplicate chunk made purely of overlap.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Chunking a Document",
+          "lineRange": [
+            70,
+            80
+          ],
+          "explanation": "Produces stable ids of the form `<source_id>-0000`, so chunk ids are deterministic across re-ingestion. Each chunk copies the document metadata and adds `chunk_index` and `chunk_count`, so citations can identify both the source and the position within it.",
+          "tourOrder": 5
+        }
+      ]
+    },
+    "personarag/snapshot.py": {
+      "overview": "Exports and restores knowledge bases as portable JSONL files under `data/snapshot/`, containing each chunk's id, text and metadata but no vectors. Restoring re-embeds the text, so snapshots don't depend on the ChromaDB version or on-disk index files and never require re-downloading sources. This is the second half of tour step 5.",
+      "sections": [
+        {
+          "title": "Docstring and snapshot location",
+          "lineRange": [
+            1,
+            19
+          ],
+          "explanation": "The docstring explains the motivation: a version-independent backup, useful because sources like YouTube may block repeated transcript requests. It also notes that snapshots hold full third-party transcripts, which is why `data/` is kept out of git. `SNAPSHOT_DIR` is derived from `config.ROOT`.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Exporting",
+          "lineRange": [
+            22,
+            31
+          ],
+          "explanation": "For each persona, reads every document and metadata entry from its ChromaDB collection and writes one JSON object per line, sorted by chunk id for stable, diff-friendly output. `ensure_ascii=False` keeps non-ASCII text readable.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Restoring",
+          "lineRange": [
+            34,
+            40
+          ],
+          "explanation": "For every `.jsonl` file, the file stem is used as the persona id, rows are parsed (skipping blank lines), the collection is reset and the chunks are re-added as `Chunk` objects. Because `store.add` re-embeds text, restore also repairs a corrupted on-disk index, as the README mentions.",
+          "tourOrder": 5
+        },
+        {
+          "title": "CLI entry point",
+          "lineRange": [
+            43,
+            52
+          ],
+          "explanation": "A small `argparse` CLI with a single `export`/`restore` choice. The dispatch uses a conditional expression as a statement, a compact but slightly unusual style.",
+          "tourOrder": 5
+        }
+      ]
+    },
+    "personarag/store.py": {
+      "overview": "The retrieval layer of PersonaRAG. It keeps one persistent Chroma collection per persona, embeds chunks with a sentence-transformers model, and answers queries in one of three modes: pure vector search, hybrid BM25 + vector search fused with Reciprocal Rank Fusion, or hybrid followed by cross-encoder re-ranking. Tour step 6 (Hybrid Retrieval Store) centres on this file; the `Hit` objects it returns flow into prompt building and grounding scoring.",
+      "sections": [
+        {
+          "title": "Module docstring and imports",
+          "lineRange": [
+            1,
+            20
+          ],
+          "explanation": "The docstring lists the three retrieval modes selected by `config.RETRIEVAL_MODE`. Note that `config` is imported both as a module and via named constants: values like `RETRIEVAL_MODE`, `CANDIDATES` and `RERANK_MODEL` are read as `config.X` at call time, while `DB_DIR`, `TOP_K` and friends are bound as defaults at import time.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Tokenizer and stopwords",
+          "lineRange": [
+            22,
+            32
+          ],
+          "explanation": "`RRF_K = 60` is the conventional Reciprocal Rank Fusion constant. `tokenize` lowercases, keeps alphanumeric runs, and drops a small hand-written stopword list (including question words like `think` and `should`) so BM25 scores focus on content terms rather than phrasing.",
+          "tourOrder": 6
+        },
+        {
+          "title": "The Hit result type",
+          "lineRange": [
+            35,
+            51
+          ],
+          "explanation": "`Hit` is the unit of retrieval passed throughout the app. `score` is always cosine similarity (higher is better), even in hybrid mode, so a single relevance threshold can apply; `rerank` is filled only when the cross-encoder ran. The `label` property builds a human-readable citation label such as `title · kind · date` from metadata, used in prompts and UIs.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Metadata cleaning and RRF",
+          "lineRange": [
+            54,
+            70
+          ],
+          "explanation": "`_clean_metadata` drops `None` values and stringifies anything that is not a primitive, because Chroma only stores str/int/float/bool. `rrf_fuse` merges any number of ranked id lists by summing `1 / (RRF_K + rank)` per id, which rewards documents ranked well by several retrievers without needing comparable raw scores.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Store setup and lazy models",
+          "lineRange": [
+            73,
+            95
+          ],
+          "explanation": "The `VectorStore` opens a `PersistentClient` at `DB_DIR` and keeps a per-persona BM25 cache. The embedding model and cross-encoder are `cached_property` values with imports inside them, so heavy sentence-transformers loading happens only on first use. `embed` prepends `EMBED_QUERY_PREFIX` to queries (some embedding models expect asymmetric query/passage prefixes) and normalizes vectors so dot product equals cosine similarity.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Collection management",
+          "lineRange": [
+            97,
+            132
+          ],
+          "explanation": "Collections are named `persona_<id>` and configured for cosine distance. `reset` and `add` both invalidate the cached BM25 index. `add` upserts in batches of 128 with precomputed embeddings, so re-ingesting the same chunk ids overwrites rather than duplicates. `sources` groups chunk metadata by `source_id` to produce one row per source with a chunk count for the knowledge-base panel.",
+          "tourOrder": 6
+        },
+        {
+          "title": "BM25 keyword ranking",
+          "lineRange": [
+            134,
+            157
+          ],
+          "explanation": "`_bm25_index` builds a `BM25Okapi` index over all of a persona's documents and caches it keyed by collection size, a cheap invalidation heuristic that rebuilds only when the count changes. `_keyword_ranking` scores the tokenized query, takes the top `n` via `argsort`, and keeps only ids with a positive score, returning an empty list when the query has no content terms.",
+          "tourOrder": 6
+        },
+        {
+          "title": "The search pipeline",
+          "lineRange": [
+            159,
+            211
+          ],
+          "explanation": "`search` first does an embedding query over a candidate pool (just `k` in vector mode, `config.CANDIDATES` otherwise), converting Chroma's cosine distance to similarity with `1 - dist`. In hybrid modes it adds BM25 results; keyword-only hits are fetched with their embeddings so a cosine score can be computed by dot product, then the two rankings are fused with RRF. A relevance gate then drops anything below `min_score` regardless of which retriever found it, which is what allows the model to abstain. In `hybrid_rerank` mode the top `RERANK_POOL` survivors are re-scored by the cross-encoder and re-sorted before truncating to `k`.",
+          "tourOrder": 6
+        }
+      ]
+    },
+    "personarag/prompts.py": {
+      "overview": "Builds every prompt the LLM sees. The system prompt contains only stable persona instructions so it can be prompt-cached, while retrieved evidence, the answer mode and the question go into the user turn. It also defines the moderator prompts used by panel mode. This is half of tour step 7 (Prompts and LLM Backends).",
+      "sections": [
+        {
+          "title": "Docstring and answer modes",
+          "lineRange": [
+            1,
+            21
+          ],
+          "explanation": "The docstring states the key design decision: stable content in the system prompt, per-question content in the user turn. `MODES` maps mode keys (ask, career, startup, technical, debate, interview) to one-line instructions; this dict is also exposed by the API's `/modes` endpoint and the Streamlit radio buttons.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Persona system prompt",
+          "lineRange": [
+            24,
+            47
+          ],
+          "explanation": "`system_prompt` renders the persona's background, domains, communication style and known positions into a fixed template. It explicitly tells the model it is a simulation and not the real person, and lays out numbered rules: speak in first person, cite numbered sources inline like `[1]`, never invent quotes or figures, flag extrapolations without citing, and admit when sources do not cover a question. These rules are what the engine's grounding report later measures.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Formatting retrieved sources",
+          "lineRange": [
+            50,
+            56
+          ],
+          "explanation": "`format_sources` numbers hits from 1 and prints each as `[n] label` followed by the passage text. The numbering here must match the citation numbers the engine validates against `hits`, so the order of the list is significant.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Citation reminders",
+          "lineRange": [
+            59,
+            68
+          ],
+          "explanation": "Two closing reminders are chosen depending on whether any sources were retrieved. The comment explains why there is no example sentence: small local models tend to copy examples verbatim. The no-sources reminder asks for a brief in-character abstention instead of a guess.",
+          "tourOrder": 7
+        },
+        {
+          "title": "User turn assembly",
+          "lineRange": [
+            71,
+            81
+          ],
+          "explanation": "`user_turn` combines sources, mode instruction and question, putting the format reminder last because smaller models follow the most recent instruction best. Unknown modes fall back to the `ask` instruction via `MODES.get`.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Moderator prompts",
+          "lineRange": [
+            84,
+            94
+          ],
+          "explanation": "`MODERATOR_SYSTEM` instructs a neutral moderator to compare panel answers under fixed headings, keep citations attached to the panelist (\"Name [n]\"), and add no new facts. `moderator_turn` concatenates each panelist's answer under a `### Name` heading. These are used by `panel.py` and by the streaming panel endpoint in `api.py`.",
+          "tourOrder": 7
+        }
+      ]
+    },
+    "personarag/llm.py": {
+      "overview": "Wraps the two supported LLM backends behind a tiny `stream(system, messages)` interface that yields text chunks. `ClaudeLLM` calls the Anthropic API with prompt caching and optional server-side fallbacks; `OllamaLLM` streams from a local Ollama server. `get_llm` picks one from configuration. This is the second half of tour step 7.",
+      "sections": [
+        {
+          "title": "Interface and helper",
+          "lineRange": [
+            1,
+            23
+          ],
+          "explanation": "`LLM` is a `typing.Protocol`, so any class with a `name` and a matching `stream` method qualifies structurally without inheritance. `complete` turns a stream into a single string by joining the chunks, letting non-streaming callers (the engine's `ask`, panel mode) reuse the same backends.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Claude backend",
+          "lineRange": [
+            26,
+            60
+          ],
+          "explanation": "`ClaudeLLM` imports `anthropic` lazily so Ollama-only setups do not need it. Each request passes the configured effort via `extra_body`, and for models listed in `_FALLBACK_MODELS` (when `config.CLAUDE_FALLBACKS` is on) adds a fallbacks option plus the matching beta flag. The system prompt is sent as a text block with `cache_control` set to ephemeral because it is identical across turns. After streaming the text, it inspects the final message's `stop_reason` and appends a visible note for refusals or token-limit truncation instead of silently ending.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Ollama backend",
+          "lineRange": [
+            63,
+            90
+          ],
+          "explanation": "`OllamaLLM` posts to `/api/chat` with `stream: True` and reads newline-delimited JSON responses, yielding each `message.content` piece until `done`. The system prompt is prepended as a system-role message. `think` is set from config because thinking models can otherwise spend the entire token budget on hidden reasoning; `num_ctx` is fixed at 8192 and server errors embedded in the stream are raised as `RuntimeError`.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Backend factory",
+          "lineRange": [
+            93,
+            99
+          ],
+          "explanation": "`get_llm` lowercases the provider (defaulting to `config.LLM_PROVIDER`) and returns a fresh backend, raising a clear `ValueError` for unknown names. The engine calls this lazily so no client is created until an answer is actually needed.",
+          "tourOrder": 7
+        }
+      ]
+    },
+    "personarag/engine.py": {
+      "overview": "The core answer pipeline: retrieve evidence from the store, build prompts, generate with the configured LLM, and score how well the answer is grounded in its citations. It exposes both a streaming path (used by the API and Streamlit chat) and a blocking `ask` path (used by panel mode and evaluation). Tour step 8 (The Grounded Answer Engine) is built around this file.",
+      "sections": [
+        {
+          "title": "Imports and citation regexes",
+          "lineRange": [
+            1,
+            15
+          ],
+          "explanation": "Three regexes drive grounding analysis: `_CITATION` finds `[n]` markers, `_SENTENCE` splits after sentence-ending punctuation, and `_TRAILING_CITES` detects citations placed after the period so they can be moved back into the sentence.",
+          "tourOrder": 8
+        },
+        {
+          "title": "Answer dataclass",
+          "lineRange": [
+            18,
+            29
+          ],
+          "explanation": "`Answer` bundles persona, question, generated text, retrieved hits and the grounding report. `cited_hits` maps the valid cited numbers (1-based) back to their `Hit` objects, guarding against out-of-range numbers.",
+          "tourOrder": 8
+        },
+        {
+          "title": "Grounding report",
+          "lineRange": [
+            32,
+            59
+          ],
+          "explanation": "`grounding_report` computes cheap, model-free signals: which citation numbers are valid versus invalid, the fraction of substantive sentences (4+ words) that carry a citation, and the top retrieval similarity. Trailing citations like `vehicles. [1]` are normalized first so they are not split into their own fragment. The level is `ungrounded` with no hits or no valid citations, `strong` when coverage is at least 0.5 and top similarity at least 0.6, `partial` at coverage 0.25+, else `weak`. Both the UIs and the evaluator consume this dict.",
+          "tourOrder": 8
+        },
+        {
+          "title": "Engine setup and lazy LLM",
+          "lineRange": [
+            62,
+            71
+          ],
+          "explanation": "`PersonaEngine` accepts an injected store and LLM (useful for tests) and otherwise creates a `VectorStore` immediately but resolves the LLM lazily via the `llm` property, so importing or constructing the engine does not require API keys.",
+          "tourOrder": 8
+        },
+        {
+          "title": "Retrieval with follow-up context",
+          "lineRange": [
+            73,
+            81
+          ],
+          "explanation": "For short questions (under 8 words) that have prior user turns, `retrieve` prepends the previous user question to the query, so follow-ups like \"why?\" retrieve relevant passages. Only the search query is expanded; the prompt still uses the original question.",
+          "tourOrder": 8
+        },
+        {
+          "title": "Message construction",
+          "lineRange": [
+            83,
+            88
+          ],
+          "explanation": "`_messages` keeps the last `HISTORY_TURNS * 2` history entries as plain text and appends a new user turn built by `user_turn`, so only the newest turn carries the sources block. This keeps context size bounded and avoids repeating old evidence.",
+          "tourOrder": 8
+        },
+        {
+          "title": "Streaming and blocking answers",
+          "lineRange": [
+            90,
+            109
+          ],
+          "explanation": "`stream` returns the hits immediately alongside a lazy token iterator, which lets callers show sources before generation finishes and compute grounding afterwards. `ask` runs the same pipeline through `complete` and returns a fully populated `Answer` with its grounding report. Note that `mode` affects only the prompt; the retrieval mode comes from config.",
+          "tourOrder": 8
+        }
+      ]
+    },
+    "personarag/panel.py": {
+      "overview": "Implements panel mode: several personas answer the same question in parallel, then a moderator LLM call compares their answers. It is a thin orchestration layer over `PersonaEngine.ask` and the moderator prompts, and is covered together with the engine in tour step 8. The Streamlit UI and the non-streaming `/panel` API endpoint call `run_panel`.",
+      "sections": [
+        {
+          "title": "Imports and result type",
+          "lineRange": [
+            1,
+            15
+          ],
+          "explanation": "`PanelResult` holds the question, one `Answer` per panelist (in the requested order) and the moderator's summary text.",
+          "tourOrder": 8
+        },
+        {
+          "title": "Running a panel",
+          "lineRange": [
+            18,
+            29
+          ],
+          "explanation": "`run_panel` first touches `engine.store.model` so the lazily loaded embedding model is created once on the calling thread rather than raced by worker threads. It then fans out `engine.ask` calls with a `ThreadPoolExecutor` sized to the number of personas; `pool.map` preserves input order. Finally it makes one blocking moderator call with `MODERATOR_SYSTEM` and a user turn built from each panelist's name and text, capped at 1500 tokens.",
+          "tourOrder": 8
+        }
+      ]
+    },
+    "api.py": {
+      "overview": "The FastAPI REST backend. It exposes configuration, persona listings, knowledge-base sources and answer modes, plus blocking and NDJSON-streaming endpoints for single-persona chat and multi-persona panels. When a built React app exists in `frontend/dist`, it is mounted at `/` so one server hosts everything. This file is one of the entry points in tour step 9.",
+      "sections": [
+        {
+          "title": "Docstring and imports",
+          "lineRange": [
+            1,
+            23
+          ],
+          "explanation": "The docstring gives the run command (`uvicorn api:app --reload`) and states that streaming endpoints emit NDJSON, one JSON object per line. Imports pull in the engine, grounding report, panel runner, persona loaders and moderator prompts from the `personarag` package.",
+          "tourOrder": 9
+        },
+        {
+          "title": "App, CORS and request models",
+          "lineRange": [
+            25,
+            45
+          ],
+          "explanation": "A single module-level `PersonaEngine` is shared by all requests. CORS is fully open, which suits a local tool. Pydantic models validate input: `Turn.role` must match `user|assistant`, questions are 1-2000 characters, and panels require 2-5 personas.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Serialization helpers",
+          "lineRange": [
+            48,
+            71
+          ],
+          "explanation": "`_hit_json` turns a `Hit` into the source shape the frontend's `Source` type expects, including a 1-based `n`, rounded similarity and optional rerank score. `_line` serializes one NDJSON line with `ensure_ascii=False`. `_check` maps a missing persona file (`FileNotFoundError`) to an HTTP 404.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Read-only endpoints",
+          "lineRange": [
+            74,
+            110
+          ],
+          "explanation": "`/config` reports the active LLM name, embedding model, retrieval mode and `top_k`; note that reading `engine.llm.name` instantiates the LLM backend. `/personas` lists each persona with its chunk count, `/personas/{id}/sources` projects the store's per-source rows to a fixed set of keys, and `/modes` returns the `MODES` dict directly.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Chat endpoints",
+          "lineRange": [
+            113,
+            142
+          ],
+          "explanation": "`/chat` runs the blocking `engine.ask` and returns answer, grounding and sources. `/chat/stream` returns a `StreamingResponse` whose generator first emits a `sources` event, then a `token` event per chunk while accumulating the text, and finally a `done` event carrying the grounding report computed on the full text. LLM failures during streaming become an `error` event rather than a broken HTTP response, since headers have already been sent.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Panel endpoints",
+          "lineRange": [
+            145,
+            189
+          ],
+          "explanation": "`/panel` delegates to `run_panel`. `/panel/stream` reimplements the fan-out with `submit` plus `as_completed` so each panelist's `answer` event is emitted as soon as it finishes, then reorders answers to the requested persona order before the moderator call and emits a `summary` event. As in `run_panel`, the embedding model is touched before threads start. Any exception is reported as an `error` event.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Serving the built frontend",
+          "lineRange": [
+            192,
+            196
+          ],
+          "explanation": "If `frontend/dist` exists, it is mounted at `/` with `html=True` so `index.html` is served for the root. Because the mount is registered after all API routes, those routes take precedence over static files.",
+          "tourOrder": 9
+        }
+      ]
+    },
+    "app.py": {
+      "overview": "The Streamlit user interface, an alternative to the React frontend that calls the `personarag` package directly instead of going over HTTP. It offers a sidebar for persona, mode and knowledge-base inspection, a chat tab with streamed answers and grounding badges, and a panel tab for multi-persona comparison. It is one of the entry points in tour step 9.",
+      "sections": [
+        {
+          "title": "Imports, page config, badges",
+          "lineRange": [
+            1,
+            21
+          ],
+          "explanation": "The page is configured as wide layout. `GROUNDING_BADGE` maps each grounding level produced by `grounding_report` to an emoji and a human-readable label, with the `ungrounded` label warning the user to treat the answer as speculation.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Cached engine and startup data",
+          "lineRange": [
+            24,
+            31
+          ],
+          "explanation": "`@st.cache_resource` ensures one `PersonaEngine` (and therefore one loaded embedding model) survives Streamlit's script reruns. On every rerun the persona list and per-persona chunk counts are recomputed so the UI reflects the current store.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Rendering sources",
+          "lineRange": [
+            34,
+            49
+          ],
+          "explanation": "`render_sources` shows a caption with the grounding badge, citation coverage and top similarity, then an expander listing every retrieved passage, marking which were cited, linking titles when a URL exists, and truncating passage text to 600 characters.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Sidebar controls",
+          "lineRange": [
+            52,
+            78
+          ],
+          "explanation": "The sidebar holds the persona selector (flagging personas with no ingested sources), a horizontal mode radio built from `MODES`, the active LLM and embedding model, and a knowledge-base expander that suggests the ingest command when empty. \"Clear conversation\" removes the persona's history from `st.session_state` and calls `st.rerun()`. A disclaimer reminds users this is a simulation.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Chat tab",
+          "lineRange": [
+            80,
+            110
+          ],
+          "explanation": "Each persona keeps its own history under `chat_<id>` in session state, replayed on every rerun with its sources. A new question is streamed with `engine.stream` and `st.write_stream`, which returns the full text so `grounding_report` can be computed afterwards. Errors (often configuration issues like a missing API key) are shown with `st.error` and halt the script. Assistant turns store hits and grounding alongside the text, while only plain role/content pairs are passed back to the engine as history.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Panel tab",
+          "lineRange": [
+            112,
+            135
+          ],
+          "explanation": "The panel tab defaults to the first three personas that have sources and disables the button until at least two panelists and a question are provided. `run_panel` runs under a spinner, answers render side by side in columns, and the moderator summary appears below.",
+          "tourOrder": 9
+        }
+      ]
+    },
+    ".streamlit/config.toml": {
+      "overview": "Streamlit server configuration for `app.py`. Its single setting disables Streamlit's file watcher to avoid import failures in optional transformers sub-modules. It is the configuration piece of tour step 9.",
+      "sections": [
+        {
+          "title": "Disabled file watcher",
+          "lineRange": [
+            1,
+            4
+          ],
+          "explanation": "Setting `fileWatcherType = \"none\"` stops Streamlit from importing every loaded module to discover file paths, which, as the comment notes, trips over optional transformers sub-modules such as ones needing torchvision. The trade-off is that hot reload is lost, so the app must be restarted after code edits.",
+          "tourOrder": 9
+        }
+      ]
+    },
+    "frontend/src/main.tsx": {
+      "overview": "The React entry point for the web frontend. It mounts `App` into the `#root` element inside `StrictMode` and loads the global stylesheet. It is the first file in tour step 10 (Frontend Bootstrap and API Client).",
+      "sections": [
+        {
+          "title": "Mounting the app",
+          "lineRange": [
+            1,
+            10
+          ],
+          "explanation": "Uses the `createRoot` API from `react-dom/client` with a non-null assertion on `document.getElementById(\"root\")`, assuming `index.html` provides that element. `StrictMode` enables extra development checks such as double-invoking effects. Importing `./styles.css` here makes the styles global for the whole app.",
+          "tourOrder": 10
+        }
+      ]
+    },
+    "frontend/src/App.tsx": {
+      "overview": "The top-level React component. It loads personas, modes and server config from the API, persists the selected persona and mode in localStorage, holds per-persona chat histories and the sources drawer state, and lays out the sidebar, chat/panel tabs and drawer. It ties the API client to the view components covered in tour step 11, and is part of tour step 10.",
+      "sections": [
+        {
+          "title": "Imports and localStorage helpers",
+          "lineRange": [
+            1,
+            25
+          ],
+          "explanation": "`load` and `save` wrap localStorage in try/catch so disabled storage or corrupt JSON fall back gracefully instead of crashing. Only preferences are persisted this way; chat history is kept in memory.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Component state",
+          "lineRange": [
+            27,
+            39
+          ],
+          "explanation": "State covers fetched data (personas, modes, config, load error), user preferences initialised lazily from localStorage, the active tab, a `chats` map keyed by persona id, the sources drawer, the knowledge-base list and toggles, and the mobile menu.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Data loading effects",
+          "lineRange": [
+            41,
+            59
+          ],
+          "explanation": "On mount, personas, modes and config are fetched in parallel with `Promise.all`; if the saved persona id is no longer available, the first persona is selected. Separate effects persist `personaId` and `mode`, and the knowledge-base list is fetched only while the panel is open, refetching when the persona changes and falling back to an empty list on error.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Derived values and callbacks",
+          "lineRange": [
+            61,
+            68
+          ],
+          "explanation": "`setMessages` is a memoised updater that applies a function to the current persona's message list inside the `chats` map, so `Chat` can update history without knowing about other personas. Drawer open/close callbacks are memoised to keep child props stable.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Error and loading states",
+          "lineRange": [
+            70,
+            81
+          ],
+          "explanation": "If the initial fetch fails, a boot screen shows the error and the command to start the API. Until the selected persona is resolved, a loading message is shown, which also guarantees `persona` is defined in the main render.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Sidebar",
+          "lineRange": [
+            83,
+            170
+          ],
+          "explanation": "The sidebar lists personas with their passage counts; choosing one switches to chat, closes the drawer and the mobile menu. Modes render as an accessible radiogroup with each mode's description as a tooltip. The collapsible knowledge base shows sources with optional links, and the footer shows the disclaimer and server config.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Main area and drawer",
+          "lineRange": [
+            172,
+            217
+          ],
+          "explanation": "The top bar has a mobile menu button, chat/panel tabs and a \"New chat\" button that clears the current persona's history. `Chat` is keyed by `personaId` so switching personas remounts it with fresh internal state, while `Panel` receives all personas. The `SourcesDrawer` is rendered when drawer state exists, and `onSelect` updates the active citation. A scrim closes the mobile menu on click.",
+          "tourOrder": 10
+        }
+      ]
+    },
+    "frontend/src/api.ts": {
+      "overview": "A typed client for the FastAPI backend. It defines TypeScript interfaces mirroring the JSON shapes produced by `api.py`, simple GET helpers, and an async-generator NDJSON reader used to consume the streaming chat and panel endpoints. It is the core of tour step 10.",
+      "sections": [
+        {
+          "title": "Base URL",
+          "lineRange": [
+            1,
+            3
+          ],
+          "explanation": "`BASE` comes from the build-time `VITE_API_URL` variable and defaults to `/api`, which the frontend README says the Vite dev server proxies to the API on port 8000. Setting `VITE_API_URL` points the app at an API on another origin.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Data types",
+          "lineRange": [
+            5,
+            56
+          ],
+          "explanation": "These interfaces mirror the backend: `Persona` matches `/personas`, `Source` matches `_hit_json` (including nullable `rerank`), `KnowledgeSource` matches the per-source rows, and `Grounding` matches `grounding_report` with `GroundingLevel` as a string-literal union. `ServerConfig` and `Turn` match `/config` and the chat history model.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Stream event unions",
+          "lineRange": [
+            58,
+            74
+          ],
+          "explanation": "`ChatEvent` and `PanelEvent` are discriminated unions on `type`, matching the NDJSON events emitted by `/chat/stream` and `/panel/stream`. Consumers can switch on `event.type` and TypeScript narrows the payload accordingly.",
+          "tourOrder": 10
+        },
+        {
+          "title": "ApiError and GET helpers",
+          "lineRange": [
+            76,
+            96
+          ],
+          "explanation": "`ApiError` carries the HTTP status alongside the server's message. `getJSON` throws a plain `Error` on non-OK responses, and the `api` object exposes typed calls for config, personas, modes and a persona's sources.",
+          "tourOrder": 10
+        },
+        {
+          "title": "NDJSON stream reader",
+          "lineRange": [
+            98,
+            131
+          ],
+          "explanation": "`streamNDJSON` POSTs a JSON body with an optional `AbortSignal`. On failure it tries to extract FastAPI's `detail` field from the error body before throwing `ApiError`. On success it reads the body stream, decodes bytes with a streaming `TextDecoder`, splits the buffer on newlines, and yields each non-empty parsed line; any final unterminated line is parsed after the stream ends. Buffering is necessary because network chunks do not align with line boundaries.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Streaming endpoints",
+          "lineRange": [
+            133,
+            141
+          ],
+          "explanation": "`streamChat` and `streamPanel` are thin typed wrappers that bind `streamNDJSON` to the two streaming endpoints and their request shapes, so components can iterate them with `for await` and cancel via the signal.",
+          "tourOrder": 10
+        }
+      ]
+    },
+    "frontend/README.md": {
+      "overview": "A short README for the React frontend: the stack (React 19, TypeScript, Vite), the npm scripts for development, build and lint, and pointers to the most important source files. It complements tour step 10 by explaining how the frontend is run and how it connects to the API.",
+      "sections": [
+        {
+          "title": "Stack and commands",
+          "lineRange": [
+            1,
+            10
+          ],
+          "explanation": "Describes the app as a React 19 + TypeScript + Vite client and links to the main README. The dev server runs on port 5173 and proxies `/api/*` to the API on port 8000, while `npm run build` produces `dist/`, which `uvicorn api:app` serves at `/`.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Key files and configuration",
+          "lineRange": [
+            12,
+            15
+          ],
+          "explanation": "Points to `src/api.ts` (typed client and NDJSON reader), `Answer.tsx` (safe minimal markdown with clickable `[n]` citations) and `SourcesDrawer.tsx` (retrieved passages with similarity and re-rank scores), and notes that `VITE_API_URL` targets an API on another origin.",
+          "tourOrder": 10
+        }
+      ]
+    },
+    "frontend/vite.config.ts": {
+      "overview": "Vite build and dev-server configuration for the React frontend. It enables the React plugin and sets up a development proxy so the browser can call `/api/*` on the same origin while requests are actually forwarded to the FastAPI server on port 8000. This is the piece that makes the API client in tour step 10 work locally without CORS setup.",
+      "sections": [
+        {
+          "title": "Plugins and imports",
+          "lineRange": [
+            1,
+            6
+          ],
+          "explanation": "Imports `defineConfig` (which gives typed config autocompletion) and the official `@vitejs/plugin-react` plugin, which provides JSX transform and Fast Refresh. The comment on line 4 documents the expected backend command, `uvicorn api:app --port 8000`, so a reader knows what the proxy targets.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Dev server and /api proxy",
+          "lineRange": [
+            7,
+            17
+          ],
+          "explanation": "The dev server runs on port 5173 and proxies any path beginning with `/api` to `http://127.0.0.1:8000`. The `rewrite` strips the `/api` prefix, so the FastAPI routes themselves are defined without it (e.g. `/api/chat` becomes `/chat`). `changeOrigin: true` rewrites the Host header to match the target. Because this only configures the dev server, production builds must provide their own way to reach the API (for example a base URL or a reverse proxy).",
+          "tourOrder": 10
+        }
+      ]
+    },
+    "frontend/src/components/Chat.tsx": {
+      "overview": "The one-on-one chat view with a single persona. It owns the composer, builds conversation history, streams an answer from the API through `streamChat`, and progressively patches the assistant message as `sources`, `token`, `done` and `error` events arrive. It renders each answer with `Answer`, shows a `GroundingBadge`, and opens the sources drawer when a citation or the sources link is clicked. This is the main UI covered in tour step 11.",
+      "sections": [
+        {
+          "title": "Imports and starter questions",
+          "lineRange": [
+            1,
+            28
+          ],
+          "explanation": "Imports the streaming client and types from `../api`, the shared `Message`/`DrawerState` types and the `uid` helper from `../types`, plus the two presentational components. `STARTERS` is a hard-coded map from persona id to suggested opening questions, shown in the empty state. Personas not in the map fall back to an empty list (line 114), so adding a persona without starters is safe.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Props and local state",
+          "lineRange": [
+            30,
+            53
+          ],
+          "explanation": "Messages are lifted to the parent (`messages`/`setMessages` props), so the conversation survives switching tabs; the component keeps only the input text and two refs. `busy` is derived from whether any message is still streaming rather than stored separately, which avoids state drift. One effect scrolls to the bottom whenever messages change; another returns a cleanup that aborts the in-flight request when `persona.id` changes or the component unmounts. `patch` is a small helper that immutably updates a single message by id.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Sending and streaming an answer",
+          "lineRange": [
+            55,
+            92
+          ],
+          "explanation": "`send` trims the question, ignores empty input or concurrent sends, and builds `history` from completed messages only, so partial or errored turns are not sent back to the model. It appends the user message and an empty assistant placeholder, then iterates the async generator from `streamChat`, mapping each event type onto the placeholder: sources first, tokens appended, grounding on done. The catch block distinguishes a user abort (kept as `done` if some text already arrived, with a 'Stopped.' note) from `ApiError` and network failures. The `AbortController` is stored in a ref so the Stop button can cancel it.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Opening the sources drawer",
+          "lineRange": [
+            94,
+            96
+          ],
+          "explanation": "`show` opens the drawer with this message's sources, the list of cited source numbers from grounding, and an optional active citation `n`. Passing `null` opens the drawer without focusing a specific source. The `m.sources &&` guard means nothing happens before retrieval results have arrived.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Empty state",
+          "lineRange": [
+            98,
+            122
+          ],
+          "explanation": "When there are no messages, the view shows the persona's avatar, name and tagline. If the persona has zero ingested chunks it tells the user to run the ingest command instead of showing starters, which ties the UI to the ingestion step of the pipeline. Otherwise starter buttons call `send` directly.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Message list rendering",
+          "lineRange": [
+            124,
+            165
+          ],
+          "explanation": "User messages render as plain bubbles; assistant messages render via `Answer` once content exists. While streaming without text, a 'thinking' indicator reports whether retrieval is still running or passages have been read. `activeCitation` is only passed when the open drawer belongs to this exact message, checked by reference equality on the `sources` array. After streaming finishes, the footer shows the grounding badge and a link to view all sources. The trailing empty `div` is the scroll anchor used by the auto-scroll effect.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Composer form",
+          "lineRange": [
+            167,
+            199
+          ],
+          "explanation": "A textarea submits on Enter and inserts a newline on Shift+Enter. While an answer is streaming, the Send button is replaced with a Stop button that aborts via the stored controller; otherwise Send is disabled for blank input. Form submission is routed through the same `send` function used by the starter buttons.",
+          "tourOrder": 11
+        }
+      ]
+    },
+    "frontend/src/components/Panel.tsx": {
+      "overview": "The panel view, where 2 to 5 personas answer the same question side by side and a moderator summarizes the differences. It manages panelist selection, streams results through `streamPanel`, renders one card per persona as answers arrive, and shows the moderator summary at the end. It reuses `Answer`, `GroundingBadge` and the shared drawer, and is the second half of tour step 11.",
+      "sections": [
+        {
+          "title": "Imports and props",
+          "lineRange": [
+            1,
+            11
+          ],
+          "explanation": "Imports `streamPanel`, `ApiError` and the `PanelAnswer`/`Persona` types from the API client, along with the shared answer and badge components. The panel receives the full persona list, the retrieval `mode`, and the `openDrawer` callback owned by the parent app.",
+          "tourOrder": 11
+        },
+        {
+          "title": "State and panelist selection",
+          "lineRange": [
+            13,
+            26
+          ],
+          "explanation": "Only personas with ingested chunks are eligible, and the first three ready ones are preselected. `asked` snapshots the question and chosen personas at submit time, so changing chips later does not reshuffle the visible results. `answers` is keyed by persona id, and `byId` is a lookup built from the persona list. `toggle` enforces the five-panelist upper bound by ignoring additions once five are chosen.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Running the panel stream",
+          "lineRange": [
+            28,
+            50
+          ],
+          "explanation": "`run` requires a non-empty question and at least two panelists, resets previous results, and iterates the `streamPanel` async generator. `answer` events are merged into the map as each persona finishes, `summary` sets the moderator text, and `error` surfaces a message. Aborts are silently ignored, while other failures are reported, and `running` is always cleared in `finally`.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Setup: chips and ask form",
+          "lineRange": [
+            52,
+            93
+          ],
+          "explanation": "Each persona is a toggle chip with `aria-pressed` for accessibility; personas without sources are disabled with an explanatory tooltip. The ask form mirrors the chat composer: a Stop button replaces the submit button while the panel is running. Submission is disabled until there is a question and at least two panelists.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Answer cards grid",
+          "lineRange": [
+            95,
+            144
+          ],
+          "explanation": "For each persona captured in `asked`, a card shows the avatar and tagline, then either the rendered `Answer` with its grounding badge and sources link, or a skeleton placeholder while waiting. Citation clicks open the shared drawer scoped to that persona's sources and cited list, so citation numbers are always interpreted against the correct panelist's retrieved passages.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Moderator and errors",
+          "lineRange": [
+            145,
+            162
+          ],
+          "explanation": "The moderator section renders the summary through `Answer` with `citations={false}`, because `[n]` markers in the summary refer to different panelists' sources and would be ambiguous as links. While running, it reports how many panelists are still pending, then switches to 'Comparing the answers…' once all have arrived. Any error is shown below the panel.",
+          "tourOrder": 11
+        }
+      ]
+    },
+    "frontend/src/components/Answer.tsx": {
+      "overview": "A small, dependency-free markdown renderer for model answers. It supports paragraphs, bullet and numbered lists, headings, bold and italic, and turns `[n]` citation markers into clickable buttons that open the matching source. Because it builds React elements instead of injecting HTML, it is safe against markup in model output. Both the chat and panel views in tour step 11 use it.",
+      "sections": [
+        {
+          "title": "Props",
+          "lineRange": [
+            1,
+            10
+          ],
+          "explanation": "`sourceCount` is used to validate citation numbers, `activeCitation` highlights the citation whose source is open in the drawer, and `onCite` is the click callback. The optional `citations` flag lets callers render `[n]` as plain text, which the panel's moderator uses.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Inline tokenizer regex",
+          "lineRange": [
+            12,
+            13
+          ],
+          "explanation": "`INLINE` captures three kinds of tokens: citations like `[3]`, `**bold**`, and `*italic*`. Because the whole pattern is a capture group, `String.split` keeps the matched tokens in the output array interleaved with plain text. The italic branch requires a non-space, non-asterisk first character to avoid matching stray asterisks such as bullet markers.",
+          "tourOrder": 11
+        },
+        {
+          "title": "renderInline",
+          "lineRange": [
+            15,
+            38
+          ],
+          "explanation": "Each split part is classified: citations become buttons, and are marked invalid when the number falls outside `1..sourceCount`, meaning the model cited a passage it was never given. Invalid citations are not clickable and get an explanatory tooltip and aria-label. Bold and italic parts are unwrapped into `strong`/`em`, and everything else is emitted as a text fragment, so React escapes it automatically.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Block-level rendering",
+          "lineRange": [
+            40,
+            71
+          ],
+          "explanation": "The text is split into blocks on blank lines. A block whose every line starts with a bullet (`-`, `*`, `•`) or `1.` style marker becomes a `ul`; a block starting with one to four `#` becomes an `h4`; anything else is a paragraph with `br` between lines. Numbered lists are intentionally rendered as unordered lists, trading fidelity for simplicity. Using array indices as keys is acceptable here because blocks are re-derived from text on every render.",
+          "tourOrder": 11
+        }
+      ]
+    },
+    "frontend/src/components/GroundingBadge.tsx": {
+      "overview": "A compact badge that visualizes the grounding report computed by the backend for an answer. It maps the grounding level to a human-readable label and color class, shows the percentage of cited sentences, and puts detailed metrics in a tooltip. It appears in the footer of both chat and panel answers (tour step 11).",
+      "sections": [
+        {
+          "title": "Level labels",
+          "lineRange": [
+            1,
+            8
+          ],
+          "explanation": "`LABELS` is typed as `Record<Grounding[\"level\"], string>`, so TypeScript forces an entry for every grounding level defined in the API types (`strong`, `partial`, `weak`, `ungrounded`). Adding a new level on the API side will produce a compile error here until a label is supplied.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Badge component",
+          "lineRange": [
+            10,
+            22
+          ],
+          "explanation": "The tooltip combines citation coverage as a percentage, the top retrieval similarity to two decimals, and the count of invalid citations when there are any. The badge class `badge-${level}` drives the color in CSS, and the visible text shows the label plus a short '% cited' figure. It is purely presentational: all scoring happens in the backend's grounding report.",
+          "tourOrder": 11
+        }
+      ]
+    },
+    "frontend/src/components/SourcesDrawer.tsx": {
+      "overview": "The side drawer that lists the passages retrieved for an answer. It highlights which passages were cited, scrolls to the active citation, shows similarity and rerank scores, and links to the original source URL. It is opened from both chat and panel views via the shared `DrawerState`, completing the citation-to-evidence loop described in tour step 11.",
+      "sections": [
+        {
+          "title": "Props",
+          "lineRange": [
+            1,
+            11
+          ],
+          "explanation": "The drawer is fully controlled by its parent: it receives the sources, the list of cited numbers, the active source, and callbacks for selecting a source and closing. Keeping state outside lets the chat view know which message's citation is active.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Scroll and keyboard effects",
+          "lineRange": [
+            13,
+            24
+          ],
+          "explanation": "A ref map keyed by source number stores each article element. When `active` changes, the matching element scrolls into view with `block: \"nearest\"` to avoid unnecessary jumps. A second effect registers a window-level Escape handler and removes it on cleanup; it depends on `onClose`, so a parent should keep that callback stable to avoid re-registering on every render.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Header and summary note",
+          "lineRange": [
+            26,
+            40
+          ],
+          "explanation": "The header shows the persona name and a close button with an aria-label. The note states how many of the retrieved passages were cited and clarifies that these passages are exactly what the model was given, which frames the drawer as the evidence for the answer.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Source list",
+          "lineRange": [
+            41,
+            78
+          ],
+          "explanation": "Each source is an article whose classes reflect whether it is active and whether it was cited; clicking it calls `onSelect`. Titles become external links when a URL exists, and `stopPropagation` prevents the link click from also selecting the card. Metadata shows kind and date plus a cited / not-cited tag, and the footer shows the similarity score and, when present, the signed rerank score. An empty list explains that no passage passed the relevance threshold.",
+          "tourOrder": 11
+        }
+      ]
+    },
+    "eval/run_eval.py": {
+      "overview": "Command-line evaluation harness for a persona's RAG pipeline. By default it measures retrieval quality (hit rate, MRR, keyword recall) with no LLM calls; `--compare` benchmarks the vector, hybrid and hybrid+rerank modes; `--generate` also produces answers and scores grounding and abstention; and `--judge` adds LLM-as-judge faithfulness. Results are printed as markdown tables and saved as JSON. It is the main subject of tour step 12.",
+      "sections": [
+        {
+          "title": "Usage docstring and imports",
+          "lineRange": [
+            1,
+            22
+          ],
+          "explanation": "The module docstring doubles as the CLI help text (it is passed to argparse with `RawDescriptionHelpFormatter`) and lists the four run modes. It imports `PersonaEngine` and the `complete` helper from the core package, and `EVAL_DIR` anchors question files and results relative to this script.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Abstention regex and judge prompt",
+          "lineRange": [
+            23,
+            36
+          ],
+          "explanation": "`ABSTAIN` heuristically detects answers where the persona says the sources do not cover the question. The negative lookahead after phrases like \"haven't spoken about this.\" means an answer that continues with 'but' or 'however' counts as extrapolation rather than an abstention. `JUDGE_SYSTEM` instructs a grader model to return strict JSON with a 0 to 1 faithfulness score and a list of unsupported claims.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Retrieval metrics",
+          "lineRange": [
+            39,
+            48
+          ],
+          "explanation": "For one question, it finds the 1-based ranks of hits whose `source_id` is in `expect_sources`. `hit` is whether any expected source was retrieved (or `None` when no expectation is given), `rr` is the reciprocal rank of the first match, and `keyword_recall` is the fraction of expected keywords present anywhere in the retrieved text. Keyword recall checks content even when chunk-to-source mapping is imperfect.",
+          "tourOrder": 12
+        },
+        {
+          "title": "LLM judge and mean helper",
+          "lineRange": [
+            51,
+            68
+          ],
+          "explanation": "`judge` numbers the retrieved passages, asks the engine's LLM to grade the answer against them, extracts the first JSON object with a DOTALL regex, and returns the `faithful` score. Parse failures return `None` instead of crashing a long run. `mean` ignores `None` values and rounds to three decimals, which lets optional metrics be aggregated safely.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Retrieval mode comparison",
+          "lineRange": [
+            71,
+            97
+          ],
+          "explanation": "`compare_modes` runs every answerable question with expected sources through each retrieval mode and computes hit rate, MRR and keyword recall, plus timing per query. For unanswerable questions it measures how often retrieval returns nothing, which tests the relevance threshold. A warm-up `hybrid_rerank` search first loads the embedding and reranker models so the first mode measured does not absorb that load time.",
+          "tourOrder": 12
+        },
+        {
+          "title": "CLI parsing and compare path",
+          "lineRange": [
+            100,
+            118
+          ],
+          "explanation": "Arguments select the persona and options; `--judge` implies `--generate`. Questions load from `eval/<persona>.yaml`. In compare mode the table is printed as a markdown table and the function returns early without writing a results file.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Per-question evaluation loop",
+          "lineRange": [
+            119,
+            139
+          ],
+          "explanation": "Each question is retrieved and scored; with `--generate` the full `engine.ask` is called and grounding level, citation coverage (answerable only), invalid citation count and abstention are recorded. Faithfulness judging is skipped for unanswerable questions, where the correct behavior is to decline. A PASS/MISS line is printed per question for quick progress feedback.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Summary and results file",
+          "lineRange": [
+            141,
+            173
+          ],
+          "explanation": "Retrieval metrics are averaged over answerable questions. Generation adds the share of answers with any citations, total invalid citations, abstention accuracy on unanswerable questions, and the count of false abstentions on answerable ones, capturing both failure directions. The summary and all rows are written to a timestamped JSON file under `eval/results/` and the summary is printed as a markdown table.",
+          "tourOrder": 12
+        }
+      ]
+    },
+    "eval/elon_musk.yaml": {
+      "overview": "The evaluation question set for the `elon_musk` persona, consumed by `eval/run_eval.py`. Each item names the source ids that should be retrieved and keywords that should appear in the retrieved passages; a few are marked unanswerable to test that the system abstains rather than inventing. It connects the persona's `sources.yaml` to measurable retrieval quality in tour step 12.",
+      "sections": [
+        {
+          "title": "Schema comments",
+          "lineRange": [
+            1,
+            5
+          ],
+          "explanation": "Documents the three per-question fields: `expect_sources` (source ids from `sources.yaml`), `keywords` (facts expected in retrieved text), and `answerable` (false when the corpus cannot answer). It also recommends growing the set to 30+ questions, since metrics over a handful of items are noisy.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Core corpus questions",
+          "lineRange": [
+            7,
+            46
+          ],
+          "explanation": "Questions targeting the Tesla master plans, the patents post and the Wikiquote page. Several are paraphrases that avoid the source's exact wording (for example, asking whether a car could earn money while unused), which tests semantic retrieval rather than keyword matching. One item has an empty `keywords` list, so it contributes to hit rate and MRR but not keyword recall.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Long-form interview questions",
+          "lineRange": [
+            48,
+            87
+          ],
+          "explanation": "Questions added for the expanded corpus of transcripts (Lex Fridman podcast and TED talks). These check that long, transcribed sources are chunked and retrieved well, with distinctive keywords like 'hitchhiker', 'diablo' or 'birth rate' acting as precise markers of the right passage.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Out-of-scope questions",
+          "lineRange": [
+            89,
+            94
+          ],
+          "explanation": "Two questions marked `answerable: false` that nothing in the corpus covers. The evaluator uses them to measure whether retrieval returns no sources and, with `--generate`, whether the answer abstains as detected by the `ABSTAIN` regex.",
+          "tourOrder": 12
+        }
+      ]
+    },
+    "tests/test_core.py": {
+      "overview": "Fast unit tests for the pure, model-free parts of the pipeline: chunking, sentence splitting, front matter and subtitle parsing, grounding scoring, reciprocal rank fusion and tokenization. They import private helpers directly so they run without embeddings, an index or an LLM. They complement the heavier evaluation harness in tour step 12.",
+      "sections": [
+        {
+          "title": "Imports and Hit factory",
+          "lineRange": [
+            1,
+            8
+          ],
+          "explanation": "Imports functions from chunking, engine, loaders and store, including underscore-prefixed loader helpers, which is a deliberate trade-off to test parsing in isolation. `_hit` builds a minimal `Hit` with a configurable similarity score for grounding tests.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Chunking tests",
+          "lineRange": [
+            11,
+            23
+          ],
+          "explanation": "The first test checks that chunks stay near the word budget (allowing slack up to 60 words for a 50-word target, since chunks end on sentence boundaries) and that the last sentence of one chunk reappears in the next, verifying overlap. The second ensures that a long run of unpunctuated text, typical of raw transcripts, still splits into multiple pieces.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Loader parsing tests",
+          "lineRange": [
+            26,
+            34
+          ],
+          "explanation": "Verifies that YAML front matter is split from the body and parsed with types (the date `2020` becomes an integer). The subtitle test feeds a WebVTT snippet with cue numbers, timestamps and a duplicated line, and expects clean deduplicated text, which matters because auto-generated captions often repeat lines.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Grounding report tests",
+          "lineRange": [
+            37,
+            46
+          ],
+          "explanation": "Covers three cases: every sentence cited with valid numbers yields `strong`; no citations yields `ungrounded`; and a citation to a nonexistent source `[7]` is reported as invalid and also yields `ungrounded`, so invalid citations do not earn credit.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Retrieval helper tests",
+          "lineRange": [
+            49,
+            59
+          ],
+          "explanation": "The RRF test shows the key property of reciprocal rank fusion: items found by both the vector and keyword retrievers outrank items found by only one, and the union of both lists is preserved. The tokenize test pins the exact output, showing that stopwords and punctuation are dropped and hyphenated or dotted terms are split into separate tokens.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Citation placement regression",
+          "lineRange": [
+            62,
+            65
+          ],
+          "explanation": "Checks that a citation placed after the sentence's full stop (`... cars. [1]`) still counts for that sentence, giving full coverage. This guards against a sentence splitter attaching the marker to the following sentence, a common formatting habit of LLMs.",
+          "tourOrder": 12
+        }
+      ]
+    },
+    "personarag/__init__.py": {
+      "overview": "Package marker for personarag declaring its docstring and __version__.",
+      "sections": []
+    },
+    "frontend/src/types.ts": {
+      "overview": "Shared frontend types for chat messages and sources-drawer state, plus a short random id generator.",
+      "sections": []
+    },
+    "frontend/.env.production": {
+      "overview": "Production environment file for the Vite build that sets VITE_API_URL, the base URL the React client uses to reach the PersonaRAG FastAPI backend.",
+      "sections": []
+    },
+    "frontend/index.html": {
+      "overview": "Vite HTML entry page for the PersonaRAG web app. It defines an inline SVG favicon and page metadata, provides the #root mount node, and loads /src/main.tsx as an ES module.",
+      "sections": []
+    },
+    "frontend/package.json": {
+      "overview": "npm manifest for the frontend. It defines the Vite dev, build (tsc -b then vite build), lint and preview scripts, React 19 runtime dependencies, and the TypeScript, ESLint and Vite dev tooling.",
+      "sections": []
+    },
+    "frontend/tsconfig.app.json": {
+      "overview": "TypeScript project config for the application sources in src/. It targets ES2020 with DOM libs, uses bundler module resolution and react-jsx, sets noEmit, and turns on strict checks plus unused-symbol checks.",
+      "sections": []
+    },
+    "frontend/tsconfig.json": {
+      "overview": "Root TypeScript solution file with no files of its own. It references the app and node sub-projects so `tsc -b` builds both.",
+      "sections": []
+    },
+    "frontend/tsconfig.node.json": {
+      "overview": "TypeScript project config for Node-side tooling. It type-checks vite.config.ts against ES2022/ES2023 libs with strict, noEmit bundler-mode settings.",
+      "sections": []
+    },
+    ".ua/config.json": {
+      "overview": "Understand-Anything tool configuration setting the knowledge-graph output language to English.",
+      "sections": []
+    },
+    "conftest.py": {
+      "overview": "Empty root-level pytest conftest that marks the project root so tests can import the personarag package.",
+      "sections": []
+    },
+    "eval/__init__.py": {
+      "overview": "Empty package marker making the eval directory importable as a Python package.",
+      "sections": []
+    },
+    "eval/mark_zuckerberg.yaml": {
+      "overview": "Evaluation question set for the Mark Zuckerberg persona, listing questions with expected source_ids, keywords that should appear in retrieved passages, and unanswerable cases the system must decline.",
+      "sections": []
+    },
+    "frontend/eslint.config.js": {
+      "overview": "ESLint flat config for the React frontend applying recommended JS and typescript-eslint rules plus react-hooks and react-refresh plugins to TS/TSX files.",
+      "sections": []
+    },
+    "frontend/src/styles.css": {
+      "overview": "Global stylesheet for the React app defining design tokens (colors, grounding-strength colors, radius, sidebar and drawer widths) and layout styles for chat, panel, sources drawer and grounding badges.",
+      "sections": []
+    },
+    "frontend/src/vite-env.d.ts": {
+      "overview": "Ambient type declaration referencing Vite client types for the frontend TypeScript build.",
+      "sections": []
+    },
+    "personas/mark_zuckerberg/persona.yaml": {
+      "overview": "Persona profile for Mark Zuckerberg: name, tagline, avatar, background, domains of expertise, communication style and known positions used to shape the system prompt.",
+      "sections": []
+    },
+    "personas/mark_zuckerberg/sources.yaml": {
+      "overview": "Knowledge-base source manifest for the Mark Zuckerberg persona listing blog URLs, YouTube talks and podcasts, and local files with metadata (title, date, kind, source_id) for ingestion.",
+      "sections": []
+    },
+    "personas/ratan_tata/persona.yaml": {
+      "overview": "Persona profile for Ratan Tata: name, tagline, avatar, background, domains of expertise, communication style and known positions used to shape the system prompt.",
+      "sections": []
+    },
+    "personas/ratan_tata/sources.yaml": {
+      "overview": "Knowledge-base source manifest for the Ratan Tata persona listing blog URLs, YouTube talks and podcasts, and local files with metadata (title, date, kind, source_id) for ingestion.",
+      "sections": []
+    },
+    "personas/tim_cook/persona.yaml": {
+      "overview": "Persona profile for Tim Cook: name, tagline, avatar, background, domains of expertise, communication style and known positions used to shape the system prompt.",
+      "sections": []
+    },
+    "personas/tim_cook/sources.yaml": {
+      "overview": "Knowledge-base source manifest for the Tim Cook persona listing blog URLs, YouTube talks and podcasts, and local files with metadata (title, date, kind, source_id) for ingestion.",
+      "sections": []
+    },
+    "scripts/record_demo.py": {
+      "overview": "Playwright automation script that drives the running web app to record chat and panel demo segments with an injected cursor and caption overlay, then stitches and speeds them up with ffmpeg into docs/demo.mp4 and demo.gif.",
+      "sections": []
+    }
+  }
+}

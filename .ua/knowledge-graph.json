@@ -1,0 +1,4603 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "PersonaRAG",
+    "languages": [
+      "css",
+      "html",
+      "javascript",
+      "json",
+      "markdown",
+      "python",
+      "toml",
+      "typescript",
+      "yaml"
+    ],
+    "frameworks": [
+      "FastAPI",
+      "Pytest",
+      "React",
+      "Streamlit",
+      "Uvicorn",
+      "Vite"
+    ],
+    "description": "An evidence-grounded conversational AI that uses Retrieval-Augmented Generation to simulate the publicly documented perspectives of public figures, answering in their voice with inline citations. It includes a Python RAG pipeline (hybrid BM25 + embedding retrieval with ChromaDB), a FastAPI backend, and a React web frontend.",
+    "analyzedAt": "2026-11-17T08:16:18.916Z",
+    "gitCommitHash": "6370590ec7b9b9311508efd01db45fcc73a5e466"
+  },
+  "nodes": [
+    {
+      "id": "file:api.py",
+      "type": "file",
+      "name": "api.py",
+      "filePath": "api.py",
+      "summary": "FastAPI backend exposing persona listing, config, source browsing, and chat/panel endpoints, including NDJSON streaming variants consumed by the React frontend.",
+      "tags": [
+        "entry-point",
+        "api-handler",
+        "streaming",
+        "fastapi"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "Uses StreamingResponse with generator functions emitting newline-delimited JSON, and a ThreadPoolExecutor with as_completed to stream panel answers as they finish."
+    },
+    {
+      "id": "file:app.py",
+      "type": "file",
+      "name": "app.py",
+      "filePath": "app.py",
+      "summary": "Streamlit UI offering a single-persona chat tab with grounding badges and cited sources, plus a multi-persona panel tab with moderator summary.",
+      "tags": [
+        "entry-point",
+        "component",
+        "streamlit",
+        "ui"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "st.cache_resource caches the PersonaEngine across Streamlit reruns."
+    },
+    {
+      "id": "file:eval/run_eval.py",
+      "type": "file",
+      "name": "run_eval.py",
+      "filePath": "eval/run_eval.py",
+      "summary": "CLI evaluation harness that scores retrieval quality (hit rate, MRR) per persona from a YAML question set, optionally comparing retrieval modes, generating answers, scoring grounding/abstention, and running LLM-as-judge faithfulness.",
+      "tags": [
+        "entry-point",
+        "evaluation",
+        "cli",
+        "metrics"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:personarag/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "personarag/__init__.py",
+      "summary": "Package marker for personarag declaring its docstring and __version__.",
+      "tags": [
+        "entry-point",
+        "package",
+        "metadata"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:personarag/engine.py",
+      "type": "file",
+      "name": "engine.py",
+      "filePath": "personarag/engine.py",
+      "summary": "Core persona engine orchestrating retrieve, prompt, generate, and grounding score, defining the Answer result type and the citation-coverage grounding report.",
+      "tags": [
+        "service",
+        "rag",
+        "core-logic",
+        "grounding",
+        "tested"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:personarag/llm.py",
+      "type": "file",
+      "name": "llm.py",
+      "filePath": "personarag/llm.py",
+      "summary": "LLM backend abstraction with a streaming Protocol, Anthropic Claude and local Ollama implementations, a complete() helper, and a provider factory.",
+      "tags": [
+        "service",
+        "llm",
+        "adapter",
+        "factory",
+        "streaming"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "typing.Protocol gives structural typing so any object with name and stream() qualifies as an LLM."
+    },
+    {
+      "id": "file:personarag/panel.py",
+      "type": "file",
+      "name": "panel.py",
+      "filePath": "personarag/panel.py",
+      "summary": "Panel mode: runs several personas on the same question in parallel threads and asks a moderator LLM to compare their answers.",
+      "tags": [
+        "service",
+        "concurrency",
+        "panel",
+        "orchestration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:personarag/personas.py",
+      "type": "file",
+      "name": "personas.py",
+      "filePath": "personarag/personas.py",
+      "summary": "Defines the Persona data model and loads/lists persona definitions from per-persona directories.",
+      "tags": [
+        "data-model",
+        "loader",
+        "persona"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:personarag/prompts.py",
+      "type": "file",
+      "name": "prompts.py",
+      "filePath": "personarag/prompts.py",
+      "summary": "Prompt templates: answer modes, persona system prompt, numbered source formatting for [n] citations, user turn construction, and moderator prompts for panels.",
+      "tags": [
+        "prompt-engineering",
+        "templates",
+        "utility",
+        "citations"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:api.py:ChatRequest",
+      "type": "class",
+      "name": "ChatRequest",
+      "filePath": "api.py",
+      "summary": "Pydantic request body for chat endpoints: persona id, question, mode, and prior conversation turns.",
+      "tags": [
+        "data-model",
+        "validation",
+        "pydantic"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        35,
+        39
+      ]
+    },
+    {
+      "id": "class:api.py:PanelRequest",
+      "type": "class",
+      "name": "PanelRequest",
+      "filePath": "api.py",
+      "summary": "Pydantic request body for panel endpoints: list of persona ids, question, and mode.",
+      "tags": [
+        "data-model",
+        "validation",
+        "pydantic"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        42,
+        45
+      ]
+    },
+    {
+      "id": "function:api.py:_hit_json",
+      "type": "function",
+      "name": "_hit_json",
+      "filePath": "api.py",
+      "summary": "Serializes a retrieved Hit into a numbered JSON source object with metadata and rounded scores.",
+      "tags": [
+        "serialization",
+        "utility",
+        "citations"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        48,
+        60
+      ]
+    },
+    {
+      "id": "function:api.py:personas",
+      "type": "function",
+      "name": "personas",
+      "filePath": "api.py",
+      "summary": "GET /personas: lists available personas with metadata and indexed chunk counts.",
+      "tags": [
+        "api-handler",
+        "endpoint",
+        "persona"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        85,
+        96
+      ]
+    },
+    {
+      "id": "function:api.py:chat",
+      "type": "function",
+      "name": "chat",
+      "filePath": "api.py",
+      "summary": "POST /chat: non-streaming persona answer with grounding report and cited sources.",
+      "tags": [
+        "api-handler",
+        "endpoint",
+        "chat"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        114,
+        121
+      ]
+    },
+    {
+      "id": "function:api.py:chat_stream",
+      "type": "function",
+      "name": "chat_stream",
+      "filePath": "api.py",
+      "summary": "POST /chat/stream: streams sources, token deltas, and final grounding as NDJSON events.",
+      "tags": [
+        "api-handler",
+        "streaming",
+        "ndjson",
+        "chat"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        125,
+        142
+      ]
+    },
+    {
+      "id": "function:api.py:panel",
+      "type": "function",
+      "name": "panel",
+      "filePath": "api.py",
+      "summary": "POST /panel: runs a multi-persona panel and returns all answers plus moderator summary.",
+      "tags": [
+        "api-handler",
+        "endpoint",
+        "panel"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        146,
+        157
+      ]
+    },
+    {
+      "id": "function:api.py:panel_stream",
+      "type": "function",
+      "name": "panel_stream",
+      "filePath": "api.py",
+      "summary": "POST /panel/stream: answers personas concurrently and streams each completed answer then the moderator summary as NDJSON.",
+      "tags": [
+        "api-handler",
+        "streaming",
+        "concurrency",
+        "panel"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        161,
+        189
+      ]
+    },
+    {
+      "id": "function:app.py:render_sources",
+      "type": "function",
+      "name": "render_sources",
+      "filePath": "app.py",
+      "summary": "Renders the grounding badge, coverage/similarity caption, and expandable cited source list in Streamlit.",
+      "tags": [
+        "component",
+        "ui",
+        "citations"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        34,
+        49
+      ]
+    },
+    {
+      "id": "function:eval/run_eval.py:retrieval_metrics",
+      "type": "function",
+      "name": "retrieval_metrics",
+      "filePath": "eval/run_eval.py",
+      "summary": "Computes hit and reciprocal-rank metrics for retrieved hits against an eval item's expected sources.",
+      "tags": [
+        "metrics",
+        "evaluation",
+        "retrieval"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        39,
+        48
+      ]
+    },
+    {
+      "id": "function:eval/run_eval.py:judge",
+      "type": "function",
+      "name": "judge",
+      "filePath": "eval/run_eval.py",
+      "summary": "LLM-as-judge scoring of an answer's faithfulness to its cited sources.",
+      "tags": [
+        "evaluation",
+        "llm-judge",
+        "faithfulness"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        51,
+        63
+      ]
+    },
+    {
+      "id": "function:eval/run_eval.py:compare_modes",
+      "type": "function",
+      "name": "compare_modes",
+      "filePath": "eval/run_eval.py",
+      "summary": "Compares retrieval metrics across vector-only, hybrid, and hybrid+rerank retrieval modes.",
+      "tags": [
+        "evaluation",
+        "retrieval",
+        "comparison"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        74,
+        97
+      ]
+    },
+    {
+      "id": "function:eval/run_eval.py:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "eval/run_eval.py",
+      "summary": "CLI entry: parses args, loads the persona question YAML, runs retrieval eval and optional generation, grounding, abstention and judge scoring, and prints a report.",
+      "tags": [
+        "entry-point",
+        "cli",
+        "evaluation"
+      ],
+      "complexity": "complex",
+      "lineRange": [
+        100,
+        169
+      ]
+    },
+    {
+      "id": "class:personarag/engine.py:Answer",
+      "type": "class",
+      "name": "Answer",
+      "filePath": "personarag/engine.py",
+      "summary": "Dataclass holding a persona answer: text, retrieved hits, grounding report, and cited_hits accessor.",
+      "tags": [
+        "data-model",
+        "dataclass",
+        "citations"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        19,
+        29
+      ]
+    },
+    {
+      "id": "function:personarag/engine.py:grounding_report",
+      "type": "function",
+      "name": "grounding_report",
+      "filePath": "personarag/engine.py",
+      "summary": "Scores how well an answer is grounded: parses [n] citations per sentence, computes citation coverage and top similarity, and assigns a grounding level.",
+      "tags": [
+        "grounding",
+        "validation",
+        "regex",
+        "citations"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        32,
+        59
+      ]
+    },
+    {
+      "id": "class:personarag/engine.py:PersonaEngine",
+      "type": "class",
+      "name": "PersonaEngine",
+      "filePath": "personarag/engine.py",
+      "summary": "Main RAG engine: lazily resolves the LLM, retrieves persona evidence from the vector store, builds messages, and streams or returns grounded answers.",
+      "tags": [
+        "service",
+        "rag",
+        "orchestration",
+        "core-logic"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        62,
+        109
+      ]
+    },
+    {
+      "id": "class:personarag/llm.py:LLM",
+      "type": "class",
+      "name": "LLM",
+      "filePath": "personarag/llm.py",
+      "summary": "Protocol for LLM backends exposing a name and stream(system, messages) text-chunk generator.",
+      "tags": [
+        "interface",
+        "protocol",
+        "type-definition"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        16,
+        19
+      ]
+    },
+    {
+      "id": "function:personarag/llm.py:complete",
+      "type": "function",
+      "name": "complete",
+      "filePath": "personarag/llm.py",
+      "summary": "Joins streamed chunks from an LLM into a single completed string.",
+      "tags": [
+        "utility",
+        "llm"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        22,
+        23
+      ]
+    },
+    {
+      "id": "class:personarag/llm.py:ClaudeLLM",
+      "type": "class",
+      "name": "ClaudeLLM",
+      "filePath": "personarag/llm.py",
+      "summary": "Anthropic Claude backend streaming text deltas with configured model and effort.",
+      "tags": [
+        "llm",
+        "adapter",
+        "anthropic",
+        "streaming"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        30,
+        60
+      ]
+    },
+    {
+      "id": "class:personarag/llm.py:OllamaLLM",
+      "type": "class",
+      "name": "OllamaLLM",
+      "filePath": "personarag/llm.py",
+      "summary": "Local Ollama backend streaming chat responses over HTTP NDJSON.",
+      "tags": [
+        "llm",
+        "adapter",
+        "ollama",
+        "streaming"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        63,
+        90
+      ]
+    },
+    {
+      "id": "function:personarag/llm.py:get_llm",
+      "type": "function",
+      "name": "get_llm",
+      "filePath": "personarag/llm.py",
+      "summary": "Factory returning the Claude or Ollama backend based on the provider setting.",
+      "tags": [
+        "factory",
+        "llm",
+        "config"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        93,
+        99
+      ]
+    },
+    {
+      "id": "class:personarag/panel.py:PanelResult",
+      "type": "class",
+      "name": "PanelResult",
+      "filePath": "personarag/panel.py",
+      "summary": "Dataclass bundling a panel question, per-persona answers, and moderator summary.",
+      "tags": [
+        "data-model",
+        "dataclass",
+        "panel"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        12,
+        15
+      ]
+    },
+    {
+      "id": "function:personarag/panel.py:run_panel",
+      "type": "function",
+      "name": "run_panel",
+      "filePath": "personarag/panel.py",
+      "summary": "Warms the embedding model, asks each persona in a thread pool, then generates a moderator comparison summary.",
+      "tags": [
+        "concurrency",
+        "orchestration",
+        "panel"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        18,
+        29
+      ]
+    },
+    {
+      "id": "class:personarag/personas.py:Persona",
+      "type": "class",
+      "name": "Persona",
+      "filePath": "personarag/personas.py",
+      "summary": "Dataclass describing a persona (id, name, bio, avatar, style) with its data directory.",
+      "tags": [
+        "data-model",
+        "dataclass",
+        "persona"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        12,
+        24
+      ]
+    },
+    {
+      "id": "function:personarag/personas.py:load_persona",
+      "type": "function",
+      "name": "load_persona",
+      "filePath": "personarag/personas.py",
+      "summary": "Loads a single persona definition by id from its directory.",
+      "tags": [
+        "loader",
+        "persona",
+        "io"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        27,
+        34
+      ]
+    },
+    {
+      "id": "function:personarag/personas.py:list_personas",
+      "type": "function",
+      "name": "list_personas",
+      "filePath": "personarag/personas.py",
+      "summary": "Enumerates and loads all available persona definitions.",
+      "tags": [
+        "loader",
+        "persona",
+        "io"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        37,
+        42
+      ]
+    },
+    {
+      "id": "function:personarag/prompts.py:system_prompt",
+      "type": "function",
+      "name": "system_prompt",
+      "filePath": "personarag/prompts.py",
+      "summary": "Builds the persona system prompt enforcing first-person voice, evidence-only claims, and [n] citations.",
+      "tags": [
+        "prompt-engineering",
+        "persona",
+        "citations"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        24,
+        47
+      ]
+    },
+    {
+      "id": "function:personarag/prompts.py:format_sources",
+      "type": "function",
+      "name": "format_sources",
+      "filePath": "personarag/prompts.py",
+      "summary": "Formats retrieved hits as a numbered source block for citation.",
+      "tags": [
+        "prompt-engineering",
+        "formatting",
+        "citations"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        50,
+        56
+      ]
+    },
+    {
+      "id": "function:personarag/prompts.py:user_turn",
+      "type": "function",
+      "name": "user_turn",
+      "filePath": "personarag/prompts.py",
+      "summary": "Builds the user message combining numbered sources, the question, and mode-specific instructions.",
+      "tags": [
+        "prompt-engineering",
+        "templates"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        71,
+        81
+      ]
+    },
+    {
+      "id": "function:personarag/prompts.py:moderator_turn",
+      "type": "function",
+      "name": "moderator_turn",
+      "filePath": "personarag/prompts.py",
+      "summary": "Builds the moderator prompt listing each persona's answer for comparison.",
+      "tags": [
+        "prompt-engineering",
+        "panel"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        92,
+        94
+      ]
+    },
+    {
+      "id": "file:frontend/src/App.tsx",
+      "type": "file",
+      "name": "App.tsx",
+      "filePath": "frontend/src/App.tsx",
+      "summary": "Root React component of the PersonaRAG frontend: loads personas, modes and server config from the API, persists persona/mode preferences in localStorage, and switches between the single-persona Chat and multi-persona Panel tabs with a shared sources drawer.",
+      "tags": [
+        "component",
+        "entry-point",
+        "state-management",
+        "react"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:frontend/src/App.tsx:App",
+      "type": "function",
+      "name": "App",
+      "filePath": "frontend/src/App.tsx",
+      "summary": "Top-level app component managing persona selection, mode, per-persona chat histories, knowledge-base listing and the citation sources drawer.",
+      "tags": [
+        "component",
+        "react",
+        "state-management"
+      ],
+      "complexity": "complex",
+      "lineRange": [
+        27,
+        217
+      ]
+    },
+    {
+      "id": "file:frontend/src/api.ts",
+      "type": "file",
+      "name": "api.ts",
+      "filePath": "frontend/src/api.ts",
+      "summary": "Typed HTTP client for the FastAPI backend, defining persona/source/grounding types, JSON GET helpers and an async-generator NDJSON streaming reader used for chat and panel answers.",
+      "tags": [
+        "api-client",
+        "streaming",
+        "type-definition",
+        "service"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "Uses an async generator (async function*) to incrementally parse NDJSON from a ReadableStream, and discriminated union types for stream events."
+    },
+    {
+      "id": "class:frontend/src/api.ts:ApiError",
+      "type": "class",
+      "name": "ApiError",
+      "filePath": "frontend/src/api.ts",
+      "summary": "Error subclass carrying the HTTP status and the server's detail message (e.g. rate-limit notices) for failed API calls.",
+      "tags": [
+        "error-handling",
+        "api-client",
+        "exports"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        77,
+        83
+      ]
+    },
+    {
+      "id": "function:frontend/src/api.ts:streamChat",
+      "type": "function",
+      "name": "streamChat",
+      "filePath": "frontend/src/api.ts",
+      "summary": "Streams a single-persona chat answer from /chat/stream as typed ChatEvent objects (sources, tokens, done, error).",
+      "tags": [
+        "streaming",
+        "api-client",
+        "chat"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        133,
+        136
+      ]
+    },
+    {
+      "id": "function:frontend/src/api.ts:streamPanel",
+      "type": "function",
+      "name": "streamPanel",
+      "filePath": "frontend/src/api.ts",
+      "summary": "Streams multi-persona panel answers and a moderator summary from /panel/stream as typed PanelEvent objects.",
+      "tags": [
+        "streaming",
+        "api-client",
+        "panel"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        138,
+        141
+      ]
+    },
+    {
+      "id": "file:frontend/src/components/Answer.tsx",
+      "type": "file",
+      "name": "Answer.tsx",
+      "filePath": "frontend/src/components/Answer.tsx",
+      "summary": "Safe minimal markdown renderer for model answers supporting paragraphs, lists, headings, bold/italic and clickable [n] citation buttons that flag invalid citations.",
+      "tags": [
+        "component",
+        "rendering",
+        "citations",
+        "markdown"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/Answer.tsx:renderInline",
+      "type": "function",
+      "name": "renderInline",
+      "filePath": "frontend/src/components/Answer.tsx",
+      "summary": "Splits inline text on citation, bold and italic patterns and renders citations as clickable source buttons, marking out-of-range ones as invalid.",
+      "tags": [
+        "rendering",
+        "citations",
+        "utility"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        15,
+        38
+      ]
+    },
+    {
+      "id": "function:frontend/src/components/Answer.tsx:Answer",
+      "type": "function",
+      "name": "Answer",
+      "filePath": "frontend/src/components/Answer.tsx",
+      "summary": "React component that splits answer text into blocks and renders paragraphs, bullet lists and headings via renderInline.",
+      "tags": [
+        "component",
+        "rendering",
+        "markdown"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        41,
+        71
+      ]
+    },
+    {
+      "id": "file:frontend/src/components/Chat.tsx",
+      "type": "file",
+      "name": "Chat.tsx",
+      "filePath": "frontend/src/components/Chat.tsx",
+      "summary": "Single-persona chat view that streams answers token by token, supports aborting in-flight requests, and shows grounding badges and source links per assistant message.",
+      "tags": [
+        "component",
+        "chat",
+        "streaming",
+        "react"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/Chat.tsx:Chat",
+      "type": "function",
+      "name": "Chat",
+      "filePath": "frontend/src/components/Chat.tsx",
+      "summary": "Chat component handling message submission, NDJSON event consumption via streamChat, abort/error handling, and rendering of messages with citations.",
+      "tags": [
+        "component",
+        "chat",
+        "streaming",
+        "event-handler"
+      ],
+      "complexity": "complex",
+      "lineRange": [
+        39,
+        199
+      ]
+    },
+    {
+      "id": "file:frontend/src/components/GroundingBadge.tsx",
+      "type": "file",
+      "name": "GroundingBadge.tsx",
+      "filePath": "frontend/src/components/GroundingBadge.tsx",
+      "summary": "Small badge component displaying an answer's grounding level (strong/partial/weak/ungrounded) with citation coverage details.",
+      "tags": [
+        "component",
+        "grounding",
+        "ui"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:frontend/src/components/GroundingBadge.tsx:GroundingBadge",
+      "type": "function",
+      "name": "GroundingBadge",
+      "filePath": "frontend/src/components/GroundingBadge.tsx",
+      "summary": "Renders a styled label summarizing a Grounding report's level and citation statistics.",
+      "tags": [
+        "component",
+        "grounding",
+        "ui"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        10,
+        22
+      ]
+    },
+    {
+      "id": "file:frontend/src/components/Panel.tsx",
+      "type": "file",
+      "name": "Panel.tsx",
+      "filePath": "frontend/src/components/Panel.tsx",
+      "summary": "Multi-persona panel discussion view: lets the user pick several personas, streams each persona's grounded answer plus a moderator summary, and supports cancellation.",
+      "tags": [
+        "component",
+        "panel",
+        "streaming",
+        "react"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/Panel.tsx:Panel",
+      "type": "function",
+      "name": "Panel",
+      "filePath": "frontend/src/components/Panel.tsx",
+      "summary": "Panel component orchestrating persona selection, streamPanel consumption, error handling and rendering of per-persona answers with grounding badges.",
+      "tags": [
+        "component",
+        "panel",
+        "streaming",
+        "event-handler"
+      ],
+      "complexity": "complex",
+      "lineRange": [
+        13,
+        162
+      ]
+    },
+    {
+      "id": "file:frontend/src/components/SourcesDrawer.tsx",
+      "type": "file",
+      "name": "SourcesDrawer.tsx",
+      "filePath": "frontend/src/components/SourcesDrawer.tsx",
+      "summary": "Side drawer listing retrieved sources for an answer, highlighting cited and active sources with scores, excerpts and links.",
+      "tags": [
+        "component",
+        "citations",
+        "ui",
+        "sources"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/SourcesDrawer.tsx:SourcesDrawer",
+      "type": "function",
+      "name": "SourcesDrawer",
+      "filePath": "frontend/src/components/SourcesDrawer.tsx",
+      "summary": "Drawer component rendering source cards for a DrawerState, emphasizing cited and currently active citation entries.",
+      "tags": [
+        "component",
+        "citations",
+        "ui"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        13,
+        78
+      ]
+    },
+    {
+      "id": "file:frontend/src/main.tsx",
+      "type": "file",
+      "name": "main.tsx",
+      "filePath": "frontend/src/main.tsx",
+      "summary": "Frontend bootstrap that mounts the App component into the #root element under React StrictMode and loads global styles.",
+      "tags": [
+        "entry-point",
+        "bootstrap",
+        "react"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:frontend/src/types.ts",
+      "type": "file",
+      "name": "types.ts",
+      "filePath": "frontend/src/types.ts",
+      "summary": "Shared frontend types for chat messages and sources-drawer state, plus a short random id generator.",
+      "tags": [
+        "type-definition",
+        "data-model",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:frontend/src/types.ts:uid",
+      "type": "function",
+      "name": "uid",
+      "filePath": "frontend/src/types.ts",
+      "summary": "Generates a short random base-36 identifier for chat messages.",
+      "tags": [
+        "utility",
+        "id-generation",
+        "exports"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        20,
+        20
+      ]
+    },
+    {
+      "id": "file:personarag/chunking.py",
+      "type": "file",
+      "name": "chunking.py",
+      "filePath": "personarag/chunking.py",
+      "summary": "Splits source documents into overlapping word-window chunks along sentence boundaries, carrying source metadata for embedding and citation.",
+      "tags": [
+        "chunking",
+        "text-processing",
+        "data-model",
+        "utility",
+        "tested"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:personarag/chunking.py:Chunk",
+      "type": "class",
+      "name": "Chunk",
+      "filePath": "personarag/chunking.py",
+      "lineRange": [
+        18,
+        21
+      ],
+      "summary": "Dataclass holding a chunk's text, id and source metadata that flows into the vector store.",
+      "tags": [
+        "data-model",
+        "dataclass",
+        "chunking"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:personarag/chunking.py:split_sentences",
+      "type": "function",
+      "name": "split_sentences",
+      "filePath": "personarag/chunking.py",
+      "lineRange": [
+        24,
+        38
+      ],
+      "summary": "Splits text into sentences, falling back to fixed-size word groups for unpunctuated transcripts.",
+      "tags": [
+        "text-processing",
+        "sentence-splitting",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:personarag/chunking.py:chunk_text",
+      "type": "function",
+      "name": "chunk_text",
+      "filePath": "personarag/chunking.py",
+      "lineRange": [
+        41,
+        67
+      ],
+      "summary": "Packs sentences into chunks of roughly CHUNK_WORDS words with CHUNK_OVERLAP_WORDS overlap between consecutive chunks.",
+      "tags": [
+        "chunking",
+        "sliding-window",
+        "text-processing"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:personarag/chunking.py:chunk_document",
+      "type": "function",
+      "name": "chunk_document",
+      "filePath": "personarag/chunking.py",
+      "lineRange": [
+        70,
+        80
+      ],
+      "summary": "Converts a loaded Document into Chunk objects with stable ids and propagated metadata.",
+      "tags": [
+        "chunking",
+        "factory",
+        "pipeline"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:personarag/config.py",
+      "type": "file",
+      "name": "config.py",
+      "filePath": "personarag/config.py",
+      "summary": "Central configuration module loading .env and exposing paths, embedding/re-ranking model names, chunk sizes, retrieval mode, candidate pool sizes and similarity thresholds as environment-overridable constants.",
+      "tags": [
+        "config",
+        "configuration",
+        "environment",
+        "retrieval-settings"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:personarag/ingest.py",
+      "type": "file",
+      "name": "ingest.py",
+      "filePath": "personarag/ingest.py",
+      "summary": "CLI that builds a persona's knowledge base by loading sources, chunking them and embedding them into the vector store, reporting counts and errors.",
+      "tags": [
+        "entry-point",
+        "cli",
+        "ingestion",
+        "pipeline"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:personarag/ingest.py:ingest",
+      "type": "function",
+      "name": "ingest",
+      "filePath": "personarag/ingest.py",
+      "lineRange": [
+        17,
+        33
+      ],
+      "summary": "Runs the load -> chunk -> embed -> store pipeline for one persona, optionally resetting its collection, and returns statistics.",
+      "tags": [
+        "ingestion",
+        "pipeline",
+        "service"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:personarag/ingest.py:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "personarag/ingest.py",
+      "lineRange": [
+        36,
+        63
+      ],
+      "summary": "Argparse entry point that ingests one or all personas and prints a summary per persona.",
+      "tags": [
+        "entry-point",
+        "cli",
+        "argparse"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:personarag/loaders.py",
+      "type": "file",
+      "name": "loaders.py",
+      "filePath": "personarag/loaders.py",
+      "summary": "Turns raw persona sources (local text/markdown/PDF/subtitle/audio files, web pages, YouTube captions, podcast audio) into plain-text Documents with metadata, using an on-disk fetch cache and Whisper fallback.",
+      "tags": [
+        "data-loading",
+        "scraping",
+        "service",
+        "caching",
+        "ingestion",
+        "tested"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "Heavy optional dependencies (pypdf, trafilatura, youtube_transcript_api, transcribe) are imported lazily inside functions so the module loads without them."
+    },
+    {
+      "id": "class:personarag/loaders.py:Document",
+      "type": "class",
+      "name": "Document",
+      "filePath": "personarag/loaders.py",
+      "lineRange": [
+        23,
+        25
+      ],
+      "summary": "Dataclass for a loaded source: plain text plus metadata such as title, url, date and type.",
+      "tags": [
+        "data-model",
+        "dataclass",
+        "document"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:personarag/loaders.py:_split_front_matter",
+      "type": "function",
+      "name": "_split_front_matter",
+      "filePath": "personarag/loaders.py",
+      "lineRange": [
+        32,
+        41
+      ],
+      "summary": "Parses an optional YAML front-matter header so text files can carry their own title/date/url.",
+      "tags": [
+        "parsing",
+        "yaml",
+        "front-matter"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:personarag/loaders.py:_strip_subtitles",
+      "type": "function",
+      "name": "_strip_subtitles",
+      "filePath": "personarag/loaders.py",
+      "lineRange": [
+        44,
+        53
+      ],
+      "summary": "Removes SRT/VTT timestamps, indices and markup from subtitle files leaving the spoken text.",
+      "tags": [
+        "parsing",
+        "subtitles",
+        "text-cleaning"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:personarag/loaders.py:load_file",
+      "type": "function",
+      "name": "load_file",
+      "filePath": "personarag/loaders.py",
+      "lineRange": [
+        56,
+        80
+      ],
+      "summary": "Loads a local file into a Document, dispatching on extension to text, PDF, subtitle or audio transcription handling.",
+      "tags": [
+        "file-loading",
+        "dispatch",
+        "ingestion"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:personarag/loaders.py:fetch_url",
+      "type": "function",
+      "name": "fetch_url",
+      "filePath": "personarag/loaders.py",
+      "lineRange": [
+        93,
+        110
+      ],
+      "summary": "Fetches and extracts main article text from a web page via trafilatura, cached on disk.",
+      "tags": [
+        "scraping",
+        "http",
+        "caching"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:personarag/loaders.py:fetch_youtube",
+      "type": "function",
+      "name": "fetch_youtube",
+      "filePath": "personarag/loaders.py",
+      "lineRange": [
+        113,
+        134
+      ],
+      "summary": "Retrieves a YouTube video's captions, falling back to downloading and Whisper-transcribing the audio; results are cached.",
+      "tags": [
+        "youtube",
+        "transcripts",
+        "caching",
+        "fallback"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:personarag/loaders.py:fetch_audio",
+      "type": "function",
+      "name": "fetch_audio",
+      "filePath": "personarag/loaders.py",
+      "lineRange": [
+        137,
+        149
+      ],
+      "summary": "Transcribes a podcast page, direct audio URL or local audio file with Whisper, caching the transcript.",
+      "tags": [
+        "audio",
+        "transcription",
+        "caching"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:personarag/loaders.py:load_persona_sources",
+      "type": "function",
+      "name": "load_persona_sources",
+      "filePath": "personarag/loaders.py",
+      "lineRange": [
+        152,
+        218
+      ],
+      "summary": "Loads every source listed in a persona's sources.yaml plus supported files under raw/, collecting Documents and per-source errors.",
+      "tags": [
+        "ingestion",
+        "orchestration",
+        "yaml",
+        "error-handling"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:personarag/snapshot.py",
+      "type": "file",
+      "name": "snapshot.py",
+      "filePath": "personarag/snapshot.py",
+      "summary": "CLI for exporting knowledge bases to portable JSONL snapshots (text + metadata, no vectors) and restoring the vector store from them without re-fetching sources.",
+      "tags": [
+        "cli",
+        "backup",
+        "serialization",
+        "entry-point"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:personarag/snapshot.py:export",
+      "type": "function",
+      "name": "export",
+      "filePath": "personarag/snapshot.py",
+      "lineRange": [
+        22,
+        31
+      ],
+      "summary": "Writes each persona's stored chunks and metadata to data/snapshot/<persona>.jsonl.",
+      "tags": [
+        "backup",
+        "serialization",
+        "export"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:personarag/snapshot.py:restore",
+      "type": "function",
+      "name": "restore",
+      "filePath": "personarag/snapshot.py",
+      "lineRange": [
+        34,
+        40
+      ],
+      "summary": "Rebuilds persona collections in the vector store from JSONL snapshot files, re-embedding the chunks.",
+      "tags": [
+        "restore",
+        "deserialization",
+        "backup"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:personarag/snapshot.py:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "personarag/snapshot.py",
+      "lineRange": [
+        43,
+        48
+      ],
+      "summary": "Argparse entry point dispatching to export or restore.",
+      "tags": [
+        "entry-point",
+        "cli"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:personarag/store.py",
+      "type": "file",
+      "name": "store.py",
+      "filePath": "personarag/store.py",
+      "summary": "ChromaDB-backed vector store with lazily loaded sentence-transformer embeddings, BM25 keyword index, reciprocal rank fusion and cross-encoder re-ranking for hybrid retrieval per persona.",
+      "tags": [
+        "retrieval",
+        "vector-store",
+        "hybrid-search",
+        "service",
+        "data-model",
+        "tested"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Uses functools.cached_property to lazily load heavy models and a size-keyed cache to rebuild the BM25 index only when the collection changes."
+    },
+    {
+      "id": "function:personarag/store.py:tokenize",
+      "type": "function",
+      "name": "tokenize",
+      "filePath": "personarag/store.py",
+      "lineRange": [
+        31,
+        32
+      ],
+      "summary": "Lowercases and splits text into word tokens, dropping stopwords and punctuation for BM25.",
+      "tags": [
+        "tokenization",
+        "bm25",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:personarag/store.py:Hit",
+      "type": "class",
+      "name": "Hit",
+      "filePath": "personarag/store.py",
+      "lineRange": [
+        36,
+        51
+      ],
+      "summary": "Dataclass for a retrieved chunk with text, metadata and score, with a label property for citation display.",
+      "tags": [
+        "data-model",
+        "dataclass",
+        "retrieval"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:personarag/store.py:rrf_fuse",
+      "type": "function",
+      "name": "rrf_fuse",
+      "filePath": "personarag/store.py",
+      "lineRange": [
+        64,
+        70
+      ],
+      "summary": "Merges ranked id lists with reciprocal rank fusion, scoring each id by 1/(RRF_K + rank).",
+      "tags": [
+        "rank-fusion",
+        "retrieval",
+        "algorithm"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:personarag/store.py:VectorStore",
+      "type": "class",
+      "name": "VectorStore",
+      "filePath": "personarag/store.py",
+      "lineRange": [
+        73,
+        211
+      ],
+      "summary": "Manages per-persona ChromaDB collections: embedding and adding chunks, listing sources, and searching via vector, hybrid BM25+RRF, or hybrid with cross-encoder re-ranking.",
+      "tags": [
+        "vector-store",
+        "retrieval",
+        "service",
+        "chromadb",
+        "reranking"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:personarag/transcribe.py",
+      "type": "file",
+      "name": "transcribe.py",
+      "filePath": "personarag/transcribe.py",
+      "summary": "Speech-to-text helpers that download audio with yt-dlp and transcribe it with a lazily loaded Whisper model for podcasts and caption-less videos.",
+      "tags": [
+        "transcription",
+        "audio",
+        "whisper",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:personarag/transcribe.py:_model",
+      "type": "function",
+      "name": "_model",
+      "filePath": "personarag/transcribe.py",
+      "lineRange": [
+        16,
+        21
+      ],
+      "summary": "Lazily loads and caches the Whisper model.",
+      "tags": [
+        "lazy-loading",
+        "singleton",
+        "model"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:personarag/transcribe.py:download_audio",
+      "type": "function",
+      "name": "download_audio",
+      "filePath": "personarag/transcribe.py",
+      "lineRange": [
+        24,
+        38
+      ],
+      "summary": "Downloads the audio track of any yt-dlp-supported URL into a directory and returns the file path.",
+      "tags": [
+        "download",
+        "yt-dlp",
+        "audio"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:personarag/transcribe.py:transcribe_file",
+      "type": "function",
+      "name": "transcribe_file",
+      "filePath": "personarag/transcribe.py",
+      "lineRange": [
+        41,
+        43
+      ],
+      "summary": "Transcribes a local audio file to text with Whisper.",
+      "tags": [
+        "transcription",
+        "whisper"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:personarag/transcribe.py:transcribe_url",
+      "type": "function",
+      "name": "transcribe_url",
+      "filePath": "personarag/transcribe.py",
+      "lineRange": [
+        46,
+        48
+      ],
+      "summary": "Downloads audio from a URL to a temp dir and transcribes it.",
+      "tags": [
+        "transcription",
+        "download"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tests/test_core.py",
+      "type": "file",
+      "name": "test_core.py",
+      "filePath": "tests/test_core.py",
+      "summary": "Pytest unit tests for chunking, front-matter and subtitle parsing, BM25 tokenization, RRF fusion and the grounding report citation logic.",
+      "tags": [
+        "test",
+        "unit-test",
+        "retrieval",
+        "grounding"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:frontend/.env.production",
+      "type": "config",
+      "name": ".env.production",
+      "filePath": "frontend/.env.production",
+      "summary": "Production environment file for the Vite build that sets VITE_API_URL, the base URL the React client uses to reach the PersonaRAG FastAPI backend.",
+      "tags": [
+        "configuration",
+        "environment",
+        "deployment",
+        "frontend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:frontend/README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "frontend/README.md",
+      "summary": "Short guide to the React 19 + TypeScript + Vite client, covering the dev/build/lint commands, the /api proxy to the FastAPI server on :8000, the key source files, and the VITE_API_URL override.",
+      "tags": [
+        "documentation",
+        "frontend",
+        "getting-started",
+        "overview"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:frontend/index.html",
+      "type": "file",
+      "name": "index.html",
+      "filePath": "frontend/index.html",
+      "summary": "Vite HTML entry page for the PersonaRAG web app. It defines an inline SVG favicon and page metadata, provides the #root mount node, and loads /src/main.tsx as an ES module.",
+      "tags": [
+        "entry-point",
+        "html",
+        "frontend",
+        "vite"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:frontend/package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "frontend/package.json",
+      "summary": "npm manifest for the frontend. It defines the Vite dev, build (tsc -b then vite build), lint and preview scripts, React 19 runtime dependencies, and the TypeScript, ESLint and Vite dev tooling.",
+      "tags": [
+        "configuration",
+        "build-system",
+        "dependencies",
+        "frontend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:frontend/tsconfig.app.json",
+      "type": "config",
+      "name": "tsconfig.app.json",
+      "filePath": "frontend/tsconfig.app.json",
+      "summary": "TypeScript project config for the application sources in src/. It targets ES2020 with DOM libs, uses bundler module resolution and react-jsx, sets noEmit, and turns on strict checks plus unused-symbol checks.",
+      "tags": [
+        "configuration",
+        "typescript",
+        "build-system",
+        "frontend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:frontend/tsconfig.json",
+      "type": "config",
+      "name": "tsconfig.json",
+      "filePath": "frontend/tsconfig.json",
+      "summary": "Root TypeScript solution file with no files of its own. It references the app and node sub-projects so `tsc -b` builds both.",
+      "tags": [
+        "configuration",
+        "typescript",
+        "build-system",
+        "project-references"
+      ],
+      "complexity": "simple",
+      "languageNotes": "Uses TypeScript project references (files: [] plus references), so one `tsc -b` builds the separate browser and Node configs."
+    },
+    {
+      "id": "config:frontend/tsconfig.node.json",
+      "type": "config",
+      "name": "tsconfig.node.json",
+      "filePath": "frontend/tsconfig.node.json",
+      "summary": "TypeScript project config for Node-side tooling. It type-checks vite.config.ts against ES2022/ES2023 libs with strict, noEmit bundler-mode settings.",
+      "tags": [
+        "configuration",
+        "typescript",
+        "build-system",
+        "tooling"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:.streamlit/config.toml",
+      "type": "config",
+      "name": "config.toml",
+      "summary": "Streamlit server configuration that disables the file watcher to avoid import errors from optional transformers sub-modules.",
+      "tags": [
+        "configuration",
+        "streamlit",
+        "server"
+      ],
+      "complexity": "simple",
+      "filePath": ".streamlit/config.toml"
+    },
+    {
+      "id": "config:.ua/config.json",
+      "type": "config",
+      "name": "config.json",
+      "summary": "Understand-Anything tool configuration setting the knowledge-graph output language to English.",
+      "tags": [
+        "configuration",
+        "tooling",
+        "localization"
+      ],
+      "complexity": "simple",
+      "filePath": ".ua/config.json"
+    },
+    {
+      "id": "document:README.md",
+      "type": "document",
+      "name": "README.md",
+      "summary": "Main project documentation covering features, architecture, quick start for the web and Streamlit apps, how videos and podcasts become knowledge, adding personas, evaluation results comparing vector vs hybrid vs re-ranked retrieval, roadmap and ethics.",
+      "tags": [
+        "documentation",
+        "entry-point",
+        "overview",
+        "evaluation",
+        "architecture"
+      ],
+      "complexity": "complex",
+      "filePath": "README.md"
+    },
+    {
+      "id": "file:conftest.py",
+      "type": "file",
+      "name": "conftest.py",
+      "summary": "Empty root-level pytest conftest that marks the project root so tests can import the personarag package.",
+      "tags": [
+        "test",
+        "configuration",
+        "pytest"
+      ],
+      "complexity": "simple",
+      "filePath": "conftest.py"
+    },
+    {
+      "id": "file:env.template",
+      "type": "file",
+      "name": "env.template",
+      "summary": "Environment variable template to copy into .env, selecting the LLM provider (Claude or Ollama), model and effort settings, and retrieval tuning parameters such as TOP_K, similarity threshold and chunk sizes.",
+      "tags": [
+        "configuration",
+        "environment",
+        "llm",
+        "retrieval-tuning"
+      ],
+      "complexity": "simple",
+      "filePath": "env.template"
+    },
+    {
+      "id": "file:eval/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "summary": "Empty package marker making the eval directory importable as a Python package.",
+      "tags": [
+        "entry-point",
+        "package-marker",
+        "evaluation"
+      ],
+      "complexity": "simple",
+      "filePath": "eval/__init__.py"
+    },
+    {
+      "id": "config:eval/elon_musk.yaml",
+      "type": "config",
+      "name": "elon_musk.yaml",
+      "summary": "Evaluation question set for the Elon Musk persona, listing questions with expected source_ids, keywords that should appear in retrieved passages, and unanswerable cases the system must decline.",
+      "tags": [
+        "evaluation",
+        "test-data",
+        "configuration",
+        "retrieval"
+      ],
+      "complexity": "moderate",
+      "filePath": "eval/elon_musk.yaml"
+    },
+    {
+      "id": "config:eval/mark_zuckerberg.yaml",
+      "type": "config",
+      "name": "mark_zuckerberg.yaml",
+      "summary": "Evaluation question set for the Mark Zuckerberg persona, listing questions with expected source_ids, keywords that should appear in retrieved passages, and unanswerable cases the system must decline.",
+      "tags": [
+        "evaluation",
+        "test-data",
+        "configuration",
+        "retrieval"
+      ],
+      "complexity": "simple",
+      "filePath": "eval/mark_zuckerberg.yaml"
+    },
+    {
+      "id": "file:frontend/eslint.config.js",
+      "type": "file",
+      "name": "eslint.config.js",
+      "summary": "ESLint flat config for the React frontend applying recommended JS and typescript-eslint rules plus react-hooks and react-refresh plugins to TS/TSX files.",
+      "tags": [
+        "configuration",
+        "linting",
+        "build-system",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "filePath": "frontend/eslint.config.js"
+    },
+    {
+      "id": "file:frontend/src/styles.css",
+      "type": "file",
+      "name": "styles.css",
+      "summary": "Global stylesheet for the React app defining design tokens (colors, grounding-strength colors, radius, sidebar and drawer widths) and layout styles for chat, panel, sources drawer and grounding badges.",
+      "tags": [
+        "styling",
+        "component",
+        "frontend",
+        "design-tokens"
+      ],
+      "complexity": "moderate",
+      "filePath": "frontend/src/styles.css"
+    },
+    {
+      "id": "file:frontend/src/vite-env.d.ts",
+      "type": "file",
+      "name": "vite-env.d.ts",
+      "summary": "Ambient type declaration referencing Vite client types for the frontend TypeScript build.",
+      "tags": [
+        "type-definition",
+        "vite",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "filePath": "frontend/src/vite-env.d.ts"
+    },
+    {
+      "id": "file:frontend/vite.config.ts",
+      "type": "file",
+      "name": "vite.config.ts",
+      "summary": "Vite build config enabling the React plugin and proxying /api requests in development to the FastAPI server on port 8000.",
+      "tags": [
+        "configuration",
+        "build-system",
+        "frontend",
+        "dev-server"
+      ],
+      "complexity": "simple",
+      "filePath": "frontend/vite.config.ts"
+    },
+    {
+      "id": "config:personas/elon_musk/persona.yaml",
+      "type": "config",
+      "name": "persona.yaml",
+      "summary": "Persona profile for Elon Musk: name, tagline, avatar, background, domains of expertise, communication style and known positions used to shape the system prompt.",
+      "tags": [
+        "persona",
+        "configuration",
+        "prompt-engineering",
+        "data-model"
+      ],
+      "complexity": "simple",
+      "filePath": "personas/elon_musk/persona.yaml"
+    },
+    {
+      "id": "config:personas/elon_musk/sources.yaml",
+      "type": "config",
+      "name": "sources.yaml",
+      "summary": "Knowledge-base source manifest for the Elon Musk persona listing blog URLs, YouTube talks and podcasts, and local files with metadata (title, date, kind, source_id) for ingestion.",
+      "tags": [
+        "persona",
+        "data-pipeline",
+        "configuration",
+        "ingestion"
+      ],
+      "complexity": "moderate",
+      "filePath": "personas/elon_musk/sources.yaml"
+    },
+    {
+      "id": "config:personas/mark_zuckerberg/persona.yaml",
+      "type": "config",
+      "name": "persona.yaml",
+      "summary": "Persona profile for Mark Zuckerberg: name, tagline, avatar, background, domains of expertise, communication style and known positions used to shape the system prompt.",
+      "tags": [
+        "persona",
+        "configuration",
+        "prompt-engineering",
+        "data-model"
+      ],
+      "complexity": "simple",
+      "filePath": "personas/mark_zuckerberg/persona.yaml"
+    },
+    {
+      "id": "config:personas/mark_zuckerberg/sources.yaml",
+      "type": "config",
+      "name": "sources.yaml",
+      "summary": "Knowledge-base source manifest for the Mark Zuckerberg persona listing blog URLs, YouTube talks and podcasts, and local files with metadata (title, date, kind, source_id) for ingestion.",
+      "tags": [
+        "persona",
+        "data-pipeline",
+        "configuration",
+        "ingestion"
+      ],
+      "complexity": "simple",
+      "filePath": "personas/mark_zuckerberg/sources.yaml"
+    },
+    {
+      "id": "config:personas/ratan_tata/persona.yaml",
+      "type": "config",
+      "name": "persona.yaml",
+      "summary": "Persona profile for Ratan Tata: name, tagline, avatar, background, domains of expertise, communication style and known positions used to shape the system prompt.",
+      "tags": [
+        "persona",
+        "configuration",
+        "prompt-engineering",
+        "data-model"
+      ],
+      "complexity": "simple",
+      "filePath": "personas/ratan_tata/persona.yaml"
+    },
+    {
+      "id": "config:personas/ratan_tata/sources.yaml",
+      "type": "config",
+      "name": "sources.yaml",
+      "summary": "Knowledge-base source manifest for the Ratan Tata persona listing blog URLs, YouTube talks and podcasts, and local files with metadata (title, date, kind, source_id) for ingestion.",
+      "tags": [
+        "persona",
+        "data-pipeline",
+        "configuration",
+        "ingestion"
+      ],
+      "complexity": "simple",
+      "filePath": "personas/ratan_tata/sources.yaml"
+    },
+    {
+      "id": "config:personas/tim_cook/persona.yaml",
+      "type": "config",
+      "name": "persona.yaml",
+      "summary": "Persona profile for Tim Cook: name, tagline, avatar, background, domains of expertise, communication style and known positions used to shape the system prompt.",
+      "tags": [
+        "persona",
+        "configuration",
+        "prompt-engineering",
+        "data-model"
+      ],
+      "complexity": "simple",
+      "filePath": "personas/tim_cook/persona.yaml"
+    },
+    {
+      "id": "config:personas/tim_cook/sources.yaml",
+      "type": "config",
+      "name": "sources.yaml",
+      "summary": "Knowledge-base source manifest for the Tim Cook persona listing blog URLs, YouTube talks and podcasts, and local files with metadata (title, date, kind, source_id) for ingestion.",
+      "tags": [
+        "persona",
+        "data-pipeline",
+        "configuration",
+        "ingestion"
+      ],
+      "complexity": "simple",
+      "filePath": "personas/tim_cook/sources.yaml"
+    },
+    {
+      "id": "document:requirements.txt",
+      "type": "document",
+      "name": "requirements.txt",
+      "summary": "Python dependency list using CPU-only PyTorch, with the Anthropic SDK, sentence-transformers, ChromaDB, FastAPI/uvicorn, Streamlit, BM25, faster-whisper, yt-dlp, transcript and web extraction libraries.",
+      "tags": [
+        "dependencies",
+        "build-system",
+        "python",
+        "configuration"
+      ],
+      "complexity": "simple",
+      "filePath": "requirements.txt"
+    },
+    {
+      "id": "file:scripts/record_demo.py",
+      "type": "file",
+      "name": "record_demo.py",
+      "summary": "Playwright automation script that drives the running web app to record chat and panel demo segments with an injected cursor and caption overlay, then stitches and speeds them up with ffmpeg into docs/demo.mp4 and demo.gif.",
+      "tags": [
+        "script",
+        "automation",
+        "demo",
+        "video",
+        "playwright"
+      ],
+      "complexity": "complex",
+      "filePath": "scripts/record_demo.py",
+      "languageNotes": "Injects a JavaScript overlay via page.evaluate because headless recordings show no cursor or click feedback."
+    },
+    {
+      "id": "class:scripts/record_demo.py:Demo",
+      "type": "class",
+      "name": "Demo",
+      "summary": "Wraps a Playwright page with timing marks and human-like helpers (move, click, type, pause, caption) for scripted demo recording.",
+      "tags": [
+        "automation",
+        "helper",
+        "playwright"
+      ],
+      "complexity": "moderate",
+      "filePath": "scripts/record_demo.py",
+      "lineRange": [
+        67,
+        96
+      ]
+    },
+    {
+      "id": "function:scripts/record_demo.py:open_page",
+      "type": "function",
+      "name": "open_page",
+      "summary": "Creates a browser context with video recording at 1280x720, opens the app URL and injects the demo overlay.",
+      "tags": [
+        "playwright",
+        "setup",
+        "recording"
+      ],
+      "complexity": "simple",
+      "filePath": "scripts/record_demo.py",
+      "lineRange": [
+        99,
+        108
+      ]
+    },
+    {
+      "id": "function:scripts/record_demo.py:wait_answer_done",
+      "type": "function",
+      "name": "wait_answer_done",
+      "summary": "Waits until the given number of streamed answers have finished rendering.",
+      "tags": [
+        "playwright",
+        "synchronization",
+        "utility"
+      ],
+      "complexity": "simple",
+      "filePath": "scripts/record_demo.py",
+      "lineRange": [
+        111,
+        115
+      ]
+    },
+    {
+      "id": "function:scripts/record_demo.py:record_chat",
+      "type": "function",
+      "name": "record_chat",
+      "summary": "Records the chat segment: asks a persona a question, shows citations, the sources drawer, the grounding badge and an out-of-scope refusal with captions.",
+      "tags": [
+        "recording",
+        "demo",
+        "chat"
+      ],
+      "complexity": "moderate",
+      "filePath": "scripts/record_demo.py",
+      "lineRange": [
+        118,
+        167
+      ]
+    },
+    {
+      "id": "function:scripts/record_demo.py:record_panel",
+      "type": "function",
+      "name": "record_panel",
+      "summary": "Records the panel-mode segment where several personas answer and a moderator compares their views.",
+      "tags": [
+        "recording",
+        "demo",
+        "panel"
+      ],
+      "complexity": "moderate",
+      "filePath": "scripts/record_demo.py",
+      "lineRange": [
+        170,
+        192
+      ]
+    },
+    {
+      "id": "function:scripts/record_demo.py:ffmpeg",
+      "type": "function",
+      "name": "ffmpeg",
+      "summary": "Runs the bundled ffmpeg binary with the given arguments, raising on failure.",
+      "tags": [
+        "utility",
+        "video",
+        "subprocess"
+      ],
+      "complexity": "simple",
+      "filePath": "scripts/record_demo.py",
+      "lineRange": [
+        195,
+        196
+      ]
+    },
+    {
+      "id": "function:scripts/record_demo.py:latest_webm",
+      "type": "function",
+      "name": "latest_webm",
+      "summary": "Returns the most recent WebM file in a directory.",
+      "tags": [
+        "utility",
+        "file-system",
+        "video"
+      ],
+      "complexity": "simple",
+      "filePath": "scripts/record_demo.py",
+      "lineRange": [
+        199,
+        200
+      ]
+    },
+    {
+      "id": "function:scripts/record_demo.py:edit",
+      "type": "function",
+      "name": "edit",
+      "summary": "Joins the chat and panel recordings, speeding up long model waits, and exports the final MP4 and GIF.",
+      "tags": [
+        "video",
+        "editing",
+        "ffmpeg"
+      ],
+      "complexity": "moderate",
+      "filePath": "scripts/record_demo.py",
+      "lineRange": [
+        203,
+        223
+      ]
+    },
+    {
+      "id": "function:scripts/record_demo.py:main",
+      "type": "function",
+      "name": "main",
+      "summary": "Entry point that launches Chromium, records both segments and runs the edit step.",
+      "tags": [
+        "entry-point",
+        "orchestration",
+        "script"
+      ],
+      "complexity": "simple",
+      "filePath": "scripts/record_demo.py",
+      "lineRange": [
+        226,
+        246
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:api.py",
+      "target": "class:api.py:ChatRequest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:api.py",
+      "target": "class:api.py:ChatRequest",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:api.py",
+      "target": "class:api.py:PanelRequest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:api.py",
+      "target": "class:api.py:PanelRequest",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:api.py",
+      "target": "function:api.py:_hit_json",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:api.py",
+      "target": "function:api.py:_hit_json",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:api.py",
+      "target": "function:api.py:personas",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:api.py",
+      "target": "function:api.py:personas",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:api.py",
+      "target": "function:api.py:chat",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:api.py",
+      "target": "function:api.py:chat",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:api.py",
+      "target": "function:api.py:chat_stream",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:api.py",
+      "target": "function:api.py:chat_stream",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:api.py",
+      "target": "function:api.py:panel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:api.py",
+      "target": "function:api.py:panel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:api.py",
+      "target": "function:api.py:panel_stream",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:api.py",
+      "target": "function:api.py:panel_stream",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:app.py",
+      "target": "function:app.py:render_sources",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app.py",
+      "target": "function:app.py:render_sources",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:eval/run_eval.py",
+      "target": "function:eval/run_eval.py:retrieval_metrics",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:eval/run_eval.py",
+      "target": "function:eval/run_eval.py:retrieval_metrics",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:eval/run_eval.py",
+      "target": "function:eval/run_eval.py:judge",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:eval/run_eval.py",
+      "target": "function:eval/run_eval.py:judge",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:eval/run_eval.py",
+      "target": "function:eval/run_eval.py:compare_modes",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:eval/run_eval.py",
+      "target": "function:eval/run_eval.py:compare_modes",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:eval/run_eval.py",
+      "target": "function:eval/run_eval.py:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:eval/run_eval.py",
+      "target": "function:eval/run_eval.py:main",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/engine.py",
+      "target": "class:personarag/engine.py:Answer",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/engine.py",
+      "target": "class:personarag/engine.py:Answer",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/engine.py",
+      "target": "function:personarag/engine.py:grounding_report",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/engine.py",
+      "target": "function:personarag/engine.py:grounding_report",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/engine.py",
+      "target": "class:personarag/engine.py:PersonaEngine",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/engine.py",
+      "target": "class:personarag/engine.py:PersonaEngine",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/llm.py",
+      "target": "class:personarag/llm.py:LLM",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/llm.py",
+      "target": "class:personarag/llm.py:LLM",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/llm.py",
+      "target": "function:personarag/llm.py:complete",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/llm.py",
+      "target": "function:personarag/llm.py:complete",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/llm.py",
+      "target": "class:personarag/llm.py:ClaudeLLM",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/llm.py",
+      "target": "class:personarag/llm.py:ClaudeLLM",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/llm.py",
+      "target": "class:personarag/llm.py:OllamaLLM",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/llm.py",
+      "target": "class:personarag/llm.py:OllamaLLM",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/llm.py",
+      "target": "function:personarag/llm.py:get_llm",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/llm.py",
+      "target": "function:personarag/llm.py:get_llm",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/panel.py",
+      "target": "class:personarag/panel.py:PanelResult",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/panel.py",
+      "target": "class:personarag/panel.py:PanelResult",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/panel.py",
+      "target": "function:personarag/panel.py:run_panel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/panel.py",
+      "target": "function:personarag/panel.py:run_panel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/personas.py",
+      "target": "class:personarag/personas.py:Persona",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/personas.py",
+      "target": "class:personarag/personas.py:Persona",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/personas.py",
+      "target": "function:personarag/personas.py:load_persona",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/personas.py",
+      "target": "function:personarag/personas.py:load_persona",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/personas.py",
+      "target": "function:personarag/personas.py:list_personas",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/personas.py",
+      "target": "function:personarag/personas.py:list_personas",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/prompts.py",
+      "target": "function:personarag/prompts.py:system_prompt",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/prompts.py",
+      "target": "function:personarag/prompts.py:system_prompt",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/prompts.py",
+      "target": "function:personarag/prompts.py:format_sources",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/prompts.py",
+      "target": "function:personarag/prompts.py:format_sources",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/prompts.py",
+      "target": "function:personarag/prompts.py:user_turn",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/prompts.py",
+      "target": "function:personarag/prompts.py:user_turn",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/prompts.py",
+      "target": "function:personarag/prompts.py:moderator_turn",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/prompts.py",
+      "target": "function:personarag/prompts.py:moderator_turn",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:api.py",
+      "target": "file:personarag/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api.py",
+      "target": "file:personarag/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api.py",
+      "target": "file:personarag/engine.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api.py",
+      "target": "file:personarag/llm.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api.py",
+      "target": "file:personarag/panel.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api.py",
+      "target": "file:personarag/personas.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api.py",
+      "target": "file:personarag/prompts.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app.py",
+      "target": "file:personarag/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app.py",
+      "target": "file:personarag/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app.py",
+      "target": "file:personarag/engine.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app.py",
+      "target": "file:personarag/panel.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app.py",
+      "target": "file:personarag/personas.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app.py",
+      "target": "file:personarag/prompts.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:eval/run_eval.py",
+      "target": "file:personarag/engine.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:eval/run_eval.py",
+      "target": "file:personarag/llm.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/engine.py",
+      "target": "file:personarag/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/engine.py",
+      "target": "file:personarag/llm.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/engine.py",
+      "target": "file:personarag/personas.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/engine.py",
+      "target": "file:personarag/prompts.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/engine.py",
+      "target": "file:personarag/store.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/llm.py",
+      "target": "file:personarag/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/panel.py",
+      "target": "file:personarag/engine.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/panel.py",
+      "target": "file:personarag/llm.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/panel.py",
+      "target": "file:personarag/prompts.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/personas.py",
+      "target": "file:personarag/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/prompts.py",
+      "target": "file:personarag/personas.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/prompts.py",
+      "target": "file:personarag/store.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "function:api.py:chat",
+      "target": "class:personarag/engine.py:PersonaEngine",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:api.py:chat_stream",
+      "target": "class:personarag/engine.py:PersonaEngine",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:api.py:panel",
+      "target": "function:personarag/panel.py:run_panel",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:api.py:panel_stream",
+      "target": "function:personarag/engine.py:grounding_report",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:api.py:panel_stream",
+      "target": "function:personarag/prompts.py:moderator_turn",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:api.py:panel_stream",
+      "target": "function:personarag/llm.py:complete",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:api.py:personas",
+      "target": "function:personarag/personas.py:list_personas",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:api.py:chat",
+      "target": "function:api.py:_hit_json",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:api.py:panel",
+      "target": "function:api.py:_hit_json",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/panel.py:run_panel",
+      "target": "function:personarag/llm.py:complete",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/panel.py:run_panel",
+      "target": "function:personarag/prompts.py:moderator_turn",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/panel.py:run_panel",
+      "target": "class:personarag/engine.py:PersonaEngine",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "class:personarag/engine.py:PersonaEngine",
+      "target": "function:personarag/engine.py:grounding_report",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "class:personarag/engine.py:PersonaEngine",
+      "target": "function:personarag/prompts.py:system_prompt",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "class:personarag/engine.py:PersonaEngine",
+      "target": "function:personarag/prompts.py:user_turn",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "class:personarag/engine.py:PersonaEngine",
+      "target": "function:personarag/personas.py:load_persona",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "class:personarag/engine.py:PersonaEngine",
+      "target": "function:personarag/llm.py:get_llm",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "class:personarag/engine.py:PersonaEngine",
+      "target": "class:personarag/store.py:VectorStore",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/prompts.py:user_turn",
+      "target": "function:personarag/prompts.py:format_sources",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:eval/run_eval.py:judge",
+      "target": "function:personarag/llm.py:complete",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:eval/run_eval.py:main",
+      "target": "class:personarag/engine.py:PersonaEngine",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:eval/run_eval.py:main",
+      "target": "function:eval/run_eval.py:retrieval_metrics",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:eval/run_eval.py:main",
+      "target": "function:eval/run_eval.py:compare_modes",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:eval/run_eval.py:main",
+      "target": "function:eval/run_eval.py:judge",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:eval/run_eval.py:compare_modes",
+      "target": "function:eval/run_eval.py:retrieval_metrics",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "class:personarag/llm.py:ClaudeLLM",
+      "target": "class:personarag/llm.py:LLM",
+      "type": "implements",
+      "direction": "forward",
+      "weight": 0.9
+    },
+    {
+      "source": "class:personarag/llm.py:OllamaLLM",
+      "target": "class:personarag/llm.py:LLM",
+      "type": "implements",
+      "direction": "forward",
+      "weight": 0.9
+    },
+    {
+      "source": "file:personarag/engine.py",
+      "target": "file:tests/test_core.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:frontend/src/App.tsx",
+      "target": "function:frontend/src/App.tsx:App",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/App.tsx",
+      "target": "function:frontend/src/App.tsx:App",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/api.ts",
+      "target": "class:frontend/src/api.ts:ApiError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api.ts",
+      "target": "class:frontend/src/api.ts:ApiError",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/api.ts",
+      "target": "function:frontend/src/api.ts:streamChat",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api.ts",
+      "target": "function:frontend/src/api.ts:streamChat",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/api.ts",
+      "target": "function:frontend/src/api.ts:streamPanel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api.ts",
+      "target": "function:frontend/src/api.ts:streamPanel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/components/Answer.tsx",
+      "target": "function:frontend/src/components/Answer.tsx:renderInline",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/Answer.tsx",
+      "target": "function:frontend/src/components/Answer.tsx:renderInline",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/components/Answer.tsx",
+      "target": "function:frontend/src/components/Answer.tsx:Answer",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/Answer.tsx",
+      "target": "function:frontend/src/components/Answer.tsx:Answer",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/components/Chat.tsx",
+      "target": "function:frontend/src/components/Chat.tsx:Chat",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/Chat.tsx",
+      "target": "function:frontend/src/components/Chat.tsx:Chat",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/components/GroundingBadge.tsx",
+      "target": "function:frontend/src/components/GroundingBadge.tsx:GroundingBadge",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/GroundingBadge.tsx",
+      "target": "function:frontend/src/components/GroundingBadge.tsx:GroundingBadge",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/components/Panel.tsx",
+      "target": "function:frontend/src/components/Panel.tsx:Panel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/Panel.tsx",
+      "target": "function:frontend/src/components/Panel.tsx:Panel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/components/SourcesDrawer.tsx",
+      "target": "function:frontend/src/components/SourcesDrawer.tsx:SourcesDrawer",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/SourcesDrawer.tsx",
+      "target": "function:frontend/src/components/SourcesDrawer.tsx:SourcesDrawer",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/types.ts",
+      "target": "function:frontend/src/types.ts:uid",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/types.ts",
+      "target": "function:frontend/src/types.ts:uid",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/App.tsx",
+      "target": "file:frontend/src/api.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/App.tsx",
+      "target": "file:frontend/src/components/Chat.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/App.tsx",
+      "target": "file:frontend/src/components/Panel.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/App.tsx",
+      "target": "file:frontend/src/components/SourcesDrawer.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/App.tsx",
+      "target": "file:frontend/src/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/Chat.tsx",
+      "target": "file:frontend/src/api.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/Chat.tsx",
+      "target": "file:frontend/src/components/Answer.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/Chat.tsx",
+      "target": "file:frontend/src/components/GroundingBadge.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/Chat.tsx",
+      "target": "file:frontend/src/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/GroundingBadge.tsx",
+      "target": "file:frontend/src/api.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/Panel.tsx",
+      "target": "file:frontend/src/api.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/Panel.tsx",
+      "target": "file:frontend/src/components/Answer.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/Panel.tsx",
+      "target": "file:frontend/src/components/GroundingBadge.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/Panel.tsx",
+      "target": "file:frontend/src/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/SourcesDrawer.tsx",
+      "target": "file:frontend/src/api.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/main.tsx",
+      "target": "file:frontend/src/App.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/main.tsx",
+      "target": "file:frontend/src/styles.css",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/types.ts",
+      "target": "file:frontend/src/api.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "function:frontend/src/App.tsx:App",
+      "target": "function:frontend/src/components/Chat.tsx:Chat",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:frontend/src/App.tsx:App",
+      "target": "function:frontend/src/components/Panel.tsx:Panel",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:frontend/src/App.tsx:App",
+      "target": "function:frontend/src/components/SourcesDrawer.tsx:SourcesDrawer",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:frontend/src/components/Chat.tsx:Chat",
+      "target": "function:frontend/src/api.ts:streamChat",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:frontend/src/components/Chat.tsx:Chat",
+      "target": "function:frontend/src/components/Answer.tsx:Answer",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:frontend/src/components/Chat.tsx:Chat",
+      "target": "function:frontend/src/components/GroundingBadge.tsx:GroundingBadge",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:frontend/src/components/Panel.tsx:Panel",
+      "target": "function:frontend/src/api.ts:streamPanel",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:frontend/src/components/Panel.tsx:Panel",
+      "target": "function:frontend/src/components/Answer.tsx:Answer",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:frontend/src/components/Panel.tsx:Panel",
+      "target": "function:frontend/src/components/GroundingBadge.tsx:GroundingBadge",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:frontend/src/components/Answer.tsx:Answer",
+      "target": "function:frontend/src/components/Answer.tsx:renderInline",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/chunking.py",
+      "target": "class:personarag/chunking.py:Chunk",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/chunking.py",
+      "target": "class:personarag/chunking.py:Chunk",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/chunking.py",
+      "target": "function:personarag/chunking.py:split_sentences",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/chunking.py",
+      "target": "function:personarag/chunking.py:split_sentences",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/chunking.py",
+      "target": "function:personarag/chunking.py:chunk_text",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/chunking.py",
+      "target": "function:personarag/chunking.py:chunk_text",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/chunking.py",
+      "target": "function:personarag/chunking.py:chunk_document",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/chunking.py",
+      "target": "function:personarag/chunking.py:chunk_document",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/ingest.py",
+      "target": "function:personarag/ingest.py:ingest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/ingest.py",
+      "target": "function:personarag/ingest.py:ingest",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/ingest.py",
+      "target": "function:personarag/ingest.py:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/ingest.py",
+      "target": "function:personarag/ingest.py:main",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "class:personarag/loaders.py:Document",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "class:personarag/loaders.py:Document",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "function:personarag/loaders.py:_split_front_matter",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "function:personarag/loaders.py:_strip_subtitles",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "function:personarag/loaders.py:load_file",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "function:personarag/loaders.py:load_file",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "function:personarag/loaders.py:fetch_url",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "function:personarag/loaders.py:fetch_url",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "function:personarag/loaders.py:fetch_youtube",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "function:personarag/loaders.py:fetch_youtube",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "function:personarag/loaders.py:fetch_audio",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "function:personarag/loaders.py:fetch_audio",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "function:personarag/loaders.py:load_persona_sources",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "function:personarag/loaders.py:load_persona_sources",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/snapshot.py",
+      "target": "function:personarag/snapshot.py:export",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/snapshot.py",
+      "target": "function:personarag/snapshot.py:export",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/snapshot.py",
+      "target": "function:personarag/snapshot.py:restore",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/snapshot.py",
+      "target": "function:personarag/snapshot.py:restore",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/snapshot.py",
+      "target": "function:personarag/snapshot.py:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/snapshot.py",
+      "target": "function:personarag/snapshot.py:main",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/store.py",
+      "target": "function:personarag/store.py:tokenize",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/store.py",
+      "target": "function:personarag/store.py:tokenize",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/store.py",
+      "target": "class:personarag/store.py:Hit",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/store.py",
+      "target": "class:personarag/store.py:Hit",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/store.py",
+      "target": "function:personarag/store.py:rrf_fuse",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/store.py",
+      "target": "function:personarag/store.py:rrf_fuse",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/store.py",
+      "target": "class:personarag/store.py:VectorStore",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/store.py",
+      "target": "class:personarag/store.py:VectorStore",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/transcribe.py",
+      "target": "function:personarag/transcribe.py:_model",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/transcribe.py",
+      "target": "function:personarag/transcribe.py:download_audio",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/transcribe.py",
+      "target": "function:personarag/transcribe.py:download_audio",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/transcribe.py",
+      "target": "function:personarag/transcribe.py:transcribe_file",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/transcribe.py",
+      "target": "function:personarag/transcribe.py:transcribe_file",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/transcribe.py",
+      "target": "function:personarag/transcribe.py:transcribe_url",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:personarag/transcribe.py",
+      "target": "function:personarag/transcribe.py:transcribe_url",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/chunking.py",
+      "target": "file:personarag/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/chunking.py",
+      "target": "file:personarag/loaders.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/ingest.py",
+      "target": "file:personarag/chunking.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/ingest.py",
+      "target": "file:personarag/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/ingest.py",
+      "target": "file:personarag/loaders.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/ingest.py",
+      "target": "file:personarag/personas.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/ingest.py",
+      "target": "file:personarag/store.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "file:personarag/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/snapshot.py",
+      "target": "file:personarag/chunking.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/snapshot.py",
+      "target": "file:personarag/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/snapshot.py",
+      "target": "file:personarag/personas.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/snapshot.py",
+      "target": "file:personarag/store.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/store.py",
+      "target": "file:personarag/chunking.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/store.py",
+      "target": "file:personarag/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/transcribe.py",
+      "target": "file:personarag/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tests/test_core.py",
+      "target": "file:personarag/chunking.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tests/test_core.py",
+      "target": "file:personarag/engine.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tests/test_core.py",
+      "target": "file:personarag/loaders.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tests/test_core.py",
+      "target": "file:personarag/store.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "file:personarag/transcribe.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "function:personarag/ingest.py:ingest",
+      "target": "function:personarag/personas.py:load_persona",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/ingest.py:ingest",
+      "target": "function:personarag/loaders.py:load_persona_sources",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/ingest.py:ingest",
+      "target": "function:personarag/chunking.py:chunk_document",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/ingest.py:main",
+      "target": "function:personarag/personas.py:list_personas",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/snapshot.py:main",
+      "target": "function:personarag/personas.py:list_personas",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/loaders.py:load_file",
+      "target": "function:personarag/transcribe.py:transcribe_file",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/loaders.py:fetch_youtube",
+      "target": "function:personarag/transcribe.py:transcribe_url",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/loaders.py:fetch_audio",
+      "target": "function:personarag/transcribe.py:transcribe_url",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/loaders.py:fetch_audio",
+      "target": "function:personarag/transcribe.py:transcribe_file",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/transcribe.py:transcribe_url",
+      "target": "function:personarag/transcribe.py:download_audio",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/loaders.py:load_persona_sources",
+      "target": "function:personarag/loaders.py:load_file",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/loaders.py:load_persona_sources",
+      "target": "function:personarag/loaders.py:fetch_url",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/loaders.py:load_persona_sources",
+      "target": "function:personarag/loaders.py:fetch_youtube",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/loaders.py:load_persona_sources",
+      "target": "function:personarag/loaders.py:fetch_audio",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/chunking.py:chunk_document",
+      "target": "function:personarag/chunking.py:chunk_text",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:personarag/chunking.py:chunk_text",
+      "target": "function:personarag/chunking.py:split_sentences",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "class:personarag/store.py:VectorStore",
+      "target": "function:personarag/store.py:rrf_fuse",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "class:personarag/store.py:VectorStore",
+      "target": "function:personarag/store.py:tokenize",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:personarag/chunking.py",
+      "target": "file:tests/test_core.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:personarag/loaders.py",
+      "target": "file:tests/test_core.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:personarag/store.py",
+      "target": "file:tests/test_core.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:frontend/.env.production",
+      "target": "file:frontend/src/api.ts",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:frontend/README.md",
+      "target": "file:frontend/src/api.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:frontend/README.md",
+      "target": "file:frontend/src/components/Answer.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:frontend/README.md",
+      "target": "file:frontend/src/components/SourcesDrawer.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:frontend/README.md",
+      "target": "config:frontend/package.json",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:frontend/README.md",
+      "target": "document:README.md",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:frontend/index.html",
+      "target": "file:frontend/src/main.tsx",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:frontend/package.json",
+      "target": "file:frontend/vite.config.ts",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:frontend/package.json",
+      "target": "file:frontend/index.html",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:frontend/tsconfig.app.json",
+      "target": "file:frontend/src/main.tsx",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:frontend/tsconfig.app.json",
+      "target": "file:frontend/src/App.tsx",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:frontend/tsconfig.node.json",
+      "target": "file:frontend/vite.config.ts",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:frontend/tsconfig.json",
+      "target": "config:frontend/tsconfig.app.json",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:frontend/tsconfig.json",
+      "target": "config:frontend/tsconfig.node.json",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:.streamlit/config.toml",
+      "target": "file:app.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:api.py",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:app.py",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:personarag/engine.py",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:personarag/ingest.py",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:eval/run_eval.py",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:scripts/record_demo.py",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:frontend/src/App.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:conftest.py",
+      "target": "file:tests/test_core.py",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:env.template",
+      "target": "file:personarag/config.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:env.template",
+      "target": "file:personarag/llm.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:eval/elon_musk.yaml",
+      "target": "file:eval/run_eval.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:eval/elon_musk.yaml",
+      "target": "config:personas/elon_musk/sources.yaml",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:eval/mark_zuckerberg.yaml",
+      "target": "file:eval/run_eval.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:eval/mark_zuckerberg.yaml",
+      "target": "config:personas/mark_zuckerberg/sources.yaml",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:frontend/eslint.config.js",
+      "target": "file:frontend/src/App.tsx",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:frontend/src/main.tsx",
+      "target": "file:frontend/src/styles.css",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:frontend/vite.config.ts",
+      "target": "file:frontend/src/main.tsx",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:frontend/vite.config.ts",
+      "target": "file:api.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:personas/elon_musk/persona.yaml",
+      "target": "file:personarag/personas.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:personas/elon_musk/sources.yaml",
+      "target": "file:personarag/ingest.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:personas/elon_musk/sources.yaml",
+      "target": "config:personas/elon_musk/persona.yaml",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:personas/mark_zuckerberg/persona.yaml",
+      "target": "file:personarag/personas.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:personas/mark_zuckerberg/sources.yaml",
+      "target": "file:personarag/ingest.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:personas/mark_zuckerberg/sources.yaml",
+      "target": "config:personas/mark_zuckerberg/persona.yaml",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:personas/ratan_tata/persona.yaml",
+      "target": "file:personarag/personas.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:personas/ratan_tata/sources.yaml",
+      "target": "file:personarag/ingest.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:personas/ratan_tata/sources.yaml",
+      "target": "config:personas/ratan_tata/persona.yaml",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:personas/tim_cook/persona.yaml",
+      "target": "file:personarag/personas.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:personas/tim_cook/sources.yaml",
+      "target": "file:personarag/ingest.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:personas/tim_cook/sources.yaml",
+      "target": "config:personas/tim_cook/persona.yaml",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:requirements.txt",
+      "target": "file:api.py",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "file:api.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "class:scripts/record_demo.py:Demo",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "class:scripts/record_demo.py:Demo",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "function:scripts/record_demo.py:open_page",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "function:scripts/record_demo.py:open_page",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "function:scripts/record_demo.py:wait_answer_done",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "function:scripts/record_demo.py:wait_answer_done",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "function:scripts/record_demo.py:record_chat",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "function:scripts/record_demo.py:record_chat",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "function:scripts/record_demo.py:record_panel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "function:scripts/record_demo.py:record_panel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "function:scripts/record_demo.py:ffmpeg",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "function:scripts/record_demo.py:ffmpeg",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "function:scripts/record_demo.py:latest_webm",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "function:scripts/record_demo.py:latest_webm",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "function:scripts/record_demo.py:edit",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "function:scripts/record_demo.py:edit",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "function:scripts/record_demo.py:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/record_demo.py",
+      "target": "function:scripts/record_demo.py:main",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:scripts/record_demo.py:main",
+      "target": "function:scripts/record_demo.py:record_chat",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:scripts/record_demo.py:main",
+      "target": "function:scripts/record_demo.py:record_panel",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:scripts/record_demo.py:main",
+      "target": "function:scripts/record_demo.py:edit",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:scripts/record_demo.py:record_chat",
+      "target": "function:scripts/record_demo.py:open_page",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:scripts/record_demo.py:record_panel",
+      "target": "function:scripts/record_demo.py:open_page",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:scripts/record_demo.py:record_chat",
+      "target": "function:scripts/record_demo.py:wait_answer_done",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:scripts/record_demo.py:edit",
+      "target": "function:scripts/record_demo.py:ffmpeg",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:scripts/record_demo.py:main",
+      "target": "function:scripts/record_demo.py:latest_webm",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer:application",
+      "name": "Application Entry Points",
+      "description": "FastAPI NDJSON streaming server (api.py) and Streamlit chat app (app.py) that expose the PersonaRAG engine to clients.",
+      "nodeIds": [
+        "file:api.py",
+        "file:app.py"
+      ]
+    },
+    {
+      "id": "layer:frontend",
+      "name": "React Frontend",
+      "description": "Vite + React TypeScript client with chat, multi-persona panel, cited-answer rendering, grounding badges and a sources drawer that consumes the streaming API.",
+      "nodeIds": [
+        "file:frontend/src/App.tsx",
+        "file:frontend/src/api.ts",
+        "file:frontend/src/components/Answer.tsx",
+        "file:frontend/src/components/Chat.tsx",
+        "file:frontend/src/components/GroundingBadge.tsx",
+        "file:frontend/src/components/Panel.tsx",
+        "file:frontend/src/components/SourcesDrawer.tsx",
+        "file:frontend/src/main.tsx",
+        "file:frontend/src/types.ts",
+        "file:frontend/src/styles.css",
+        "file:frontend/src/vite-env.d.ts",
+        "file:frontend/index.html"
+      ]
+    },
+    {
+      "id": "layer:rag-core",
+      "name": "RAG Core Engine",
+      "description": "Core personarag package: grounded answer engine, hybrid BM25 + embedding ChromaDB store with re-ranking, LLM adapters, citation prompts, persona loading, panel orchestration and settings.",
+      "nodeIds": [
+        "file:personarag/__init__.py",
+        "file:personarag/engine.py",
+        "file:personarag/store.py",
+        "file:personarag/llm.py",
+        "file:personarag/prompts.py",
+        "file:personarag/personas.py",
+        "file:personarag/panel.py",
+        "file:personarag/config.py"
+      ]
+    },
+    {
+      "id": "layer:ingestion",
+      "name": "Ingestion Pipeline",
+      "description": "Builds per-persona knowledge bases by loading blogs, YouTube and podcast sources, transcribing audio with Whisper, chunking text and snapshotting the index.",
+      "nodeIds": [
+        "file:personarag/ingest.py",
+        "file:personarag/loaders.py",
+        "file:personarag/transcribe.py",
+        "file:personarag/chunking.py",
+        "file:personarag/snapshot.py"
+      ]
+    },
+    {
+      "id": "layer:persona-data",
+      "name": "Persona Definitions",
+      "description": "Per-persona YAML profiles and source manifests (Elon Musk, Mark Zuckerberg, Ratan Tata, Tim Cook) that drive prompting and ingestion.",
+      "nodeIds": [
+        "config:personas/elon_musk/persona.yaml",
+        "config:personas/elon_musk/sources.yaml",
+        "config:personas/mark_zuckerberg/persona.yaml",
+        "config:personas/mark_zuckerberg/sources.yaml",
+        "config:personas/ratan_tata/persona.yaml",
+        "config:personas/ratan_tata/sources.yaml",
+        "config:personas/tim_cook/persona.yaml",
+        "config:personas/tim_cook/sources.yaml"
+      ]
+    },
+    {
+      "id": "layer:evaluation-test",
+      "name": "Evaluation & Testing",
+      "description": "Retrieval/grounding evaluation harness with per-persona YAML question sets, pytest unit tests and fixtures, plus the Playwright demo-recording script.",
+      "nodeIds": [
+        "file:eval/run_eval.py",
+        "file:eval/__init__.py",
+        "config:eval/elon_musk.yaml",
+        "config:eval/mark_zuckerberg.yaml",
+        "file:tests/test_core.py",
+        "file:conftest.py",
+        "file:scripts/record_demo.py"
+      ]
+    },
+    {
+      "id": "layer:config-docs",
+      "name": "Configuration & Documentation",
+      "description": "Python requirements, environment templates, Streamlit and tooling config, frontend build/lint/TypeScript settings, and the project and frontend READMEs.",
+      "nodeIds": [
+        "document:requirements.txt",
+        "file:env.template",
+        "config:.streamlit/config.toml",
+        "config:.ua/config.json",
+        "config:frontend/.env.production",
+        "config:frontend/package.json",
+        "config:frontend/tsconfig.json",
+        "config:frontend/tsconfig.app.json",
+        "config:frontend/tsconfig.node.json",
+        "file:frontend/eslint.config.js",
+        "file:frontend/vite.config.ts",
+        "document:README.md",
+        "document:frontend/README.md"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "title": "Project Overview",
+      "description": "Start with README.md to learn what PersonaRAG does: it simulates public figures' documented perspectives by answering only from evidence in per-persona knowledge bases built from blogs, YouTube talks and podcasts. The README outlines the architecture, the web and Streamlit quick starts, and how videos and podcasts become searchable knowledge, giving you the map for the rest of the tour.",
+      "nodeIds": [
+        "document:README.md"
+      ]
+    },
+    {
+      "order": 2,
+      "title": "Settings and Environment",
+      "description": "config.py is the most depended-upon module in the project: it loads .env and exposes paths, embedding and re-ranking model names, chunk sizes, retrieval mode and similarity thresholds. env.template shows which knobs a user sets, such as choosing Claude or a local Ollama model, while requirements.txt lists the stack (ChromaDB, sentence-transformers, BM25, FastAPI, Streamlit, faster-whisper). Understanding these settings first makes every later component easier to read.",
+      "nodeIds": [
+        "file:personarag/config.py",
+        "file:env.template",
+        "document:requirements.txt"
+      ]
+    },
+    {
+      "order": 3,
+      "title": "Personas as Data",
+      "description": "Each persona is defined by data rather than code: persona.yaml describes background, expertise, communication style and known positions, while sources.yaml lists the blogs, talks and podcasts that form its knowledge base. personas.py turns these directories into Persona objects, and it is the second most widely imported module. Adding a new figure is therefore mostly a matter of adding YAML files.",
+      "nodeIds": [
+        "file:personarag/personas.py",
+        "config:personas/elon_musk/persona.yaml",
+        "config:personas/elon_musk/sources.yaml"
+      ],
+      "languageLesson": "YAML manifests separate content from code: the Python loader maps keys into a typed data model, so new personas can be added without touching source files."
+    },
+    {
+      "order": 4,
+      "title": "Ingesting Sources",
+      "description": "Before a persona can answer anything, its sources must be turned into text. loaders.py converts local files, web pages, YouTube captions and podcast audio into plain-text Documents with metadata, relying on transcribe.py, which downloads audio with yt-dlp and transcribes it with a lazily loaded Whisper model. ingest.py is the CLI that drives this pipeline for a persona and reports counts and errors.",
+      "nodeIds": [
+        "file:personarag/ingest.py",
+        "file:personarag/loaders.py",
+        "file:personarag/transcribe.py"
+      ]
+    },
+    {
+      "order": 5,
+      "title": "Chunking and Snapshots",
+      "description": "chunking.py splits each document into overlapping word-window chunks along sentence boundaries, carrying source metadata forward so every chunk can later be cited. snapshot.py exports a knowledge base to portable JSONL (text and metadata, no vectors) and restores it, so the index can be rebuilt without re-fetching or re-transcribing sources.",
+      "nodeIds": [
+        "file:personarag/chunking.py",
+        "file:personarag/snapshot.py"
+      ]
+    },
+    {
+      "order": 6,
+      "title": "Hybrid Retrieval Store",
+      "description": "store.py is the retrieval heart of the system, built on the chunks from Step 5. It stores embeddings in ChromaDB, maintains a BM25 keyword index, merges both rankings with reciprocal rank fusion, and re-ranks the candidate pool with a cross-encoder. Combining lexical and semantic search catches both exact names and paraphrased ideas, which matters when evidence must be precise.",
+      "nodeIds": [
+        "file:personarag/store.py"
+      ],
+      "languageLesson": "Reciprocal rank fusion scores each document as the sum of 1/(k + rank) across rankers, so results that rank well in several lists rise to the top without needing comparable raw scores."
+    },
+    {
+      "order": 7,
+      "title": "Prompts and LLM Backends",
+      "description": "prompts.py formats the retrieved passages as numbered sources so the model can cite them inline as [n], and builds the persona system prompt, answer modes and moderator prompts. llm.py hides the model provider behind a streaming Protocol with Anthropic Claude and local Ollama implementations plus a factory, which is how the provider choice from Step 2 takes effect.",
+      "nodeIds": [
+        "file:personarag/prompts.py",
+        "file:personarag/llm.py"
+      ],
+      "languageLesson": "Python's typing.Protocol enables structural typing: any class with matching method signatures satisfies the interface without inheriting from it, keeping LLM backends loosely coupled."
+    },
+    {
+      "order": 8,
+      "title": "The Grounded Answer Engine",
+      "description": "engine.py ties the previous steps together: retrieve from the store, build the prompt, generate with the LLM, then score grounding. It defines the Answer result type and the citation-coverage grounding report behind the strong, partial, weak and ungrounded labels shown in the UIs. panel.py builds on the engine by running several personas on the same question in parallel threads and asking a moderator LLM to compare their answers.",
+      "nodeIds": [
+        "file:personarag/engine.py",
+        "file:personarag/panel.py"
+      ]
+    },
+    {
+      "order": 9,
+      "title": "FastAPI and Streamlit Entry Points",
+      "description": "Two front doors expose the engine. api.py is the primary runtime: a FastAPI server with persona, config, source and chat/panel endpoints, including NDJSON streaming variants, and it also serves the built React app. app.py is a Streamlit alternative with a chat tab showing grounding badges and cited sources plus a panel tab with a moderator summary; its config.toml disables the file watcher to avoid optional-import errors.",
+      "nodeIds": [
+        "file:api.py",
+        "file:app.py",
+        "config:.streamlit/config.toml"
+      ],
+      "languageLesson": "NDJSON (newline-delimited JSON) streams one JSON object per line, letting clients parse tokens and metadata incrementally over a single HTTP response without WebSockets."
+    },
+    {
+      "order": 10,
+      "title": "Frontend Bootstrap and API Client",
+      "description": "The React client starts at main.tsx, which mounts App.tsx; App loads personas, modes and config from the backend and persists preferences in localStorage. api.ts is the typed client shared by every view, defining persona, source and grounding types and reading the NDJSON stream from Step 9 with an async generator. The frontend README and vite.config.ts explain the dev workflow and the /api proxy to the FastAPI server on port 8000.",
+      "nodeIds": [
+        "file:frontend/src/main.tsx",
+        "file:frontend/src/App.tsx",
+        "file:frontend/src/api.ts",
+        "document:frontend/README.md",
+        "file:frontend/vite.config.ts"
+      ],
+      "languageLesson": "An async generator (async function*) lets TypeScript code consume a streamed response with for await...of, yielding each parsed NDJSON line as it arrives."
+    },
+    {
+      "order": 11,
+      "title": "Chat and Panel Views",
+      "description": "Chat.tsx streams a single persona's answer token by token with abort support, and Panel.tsx streams several personas plus the moderator summary introduced in Step 8. Answer.tsx renders markdown safely and turns [n] markers into clickable citation buttons, flagging invalid ones, while GroundingBadge.tsx and SourcesDrawer.tsx surface the grounding report and the retrieved evidence behind each answer.",
+      "nodeIds": [
+        "file:frontend/src/components/Chat.tsx",
+        "file:frontend/src/components/Panel.tsx",
+        "file:frontend/src/components/Answer.tsx",
+        "file:frontend/src/components/GroundingBadge.tsx",
+        "file:frontend/src/components/SourcesDrawer.tsx"
+      ]
+    },
+    {
+      "order": 12,
+      "title": "Evaluation and Tests",
+      "description": "Quality is measured, not assumed. run_eval.py scores retrieval per persona with hit rate and MRR using YAML question sets that list expected source IDs, keywords and unanswerable questions, and it can compare retrieval modes. test_core.py unit-tests pieces covered earlier: chunking, subtitle parsing, BM25 tokenization, RRF fusion and the grounding report citation logic.",
+      "nodeIds": [
+        "file:eval/run_eval.py",
+        "config:eval/elon_musk.yaml",
+        "file:tests/test_core.py"
+      ],
+      "languageLesson": "Mean Reciprocal Rank averages 1/rank of the first relevant result across queries, rewarding retrievers that put the right evidence at the very top."
+    }
+  ]
+}

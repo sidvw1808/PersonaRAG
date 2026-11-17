@@ -1,0 +1,2482 @@
+{
+  "version": "1.0.0",
+  "gitCommitHash": "6370590ec7b9b9311508efd01db45fcc73a5e466",
+  "generatedAt": "2026-11-17T08:16:43.217Z",
+  "files": {
+    ".streamlit/config.toml": {
+      "filePath": ".streamlit/config.toml",
+      "contentHash": "37ebb05958bdfd4c1207c5a277e8fe471d6ff44d35df91b30c752bb92964db2c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 5,
+      "hasStructuralAnalysis": false
+    },
+    ".ua/config.json": {
+      "filePath": ".ua/config.json",
+      "contentHash": "e6e1895a8e3cb71f76daebccd84c4fc9877d8a88fb75e476ca22a320e69d4995",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": false
+    },
+    "README.md": {
+      "filePath": "README.md",
+      "contentHash": "0091e2c8777833058bdd82e27bdef0660f69087be585c70db58759cc7a6258f6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 317,
+      "hasStructuralAnalysis": false
+    },
+    "api.py": {
+      "filePath": "api.py",
+      "contentHash": "ff57d2cc340fae023b95a89a96713013fc96628ab7f6ab2b64006bcbdc44c474",
+      "functions": [
+        {
+          "name": "_hit_json",
+          "params": [
+            "i",
+            "h"
+          ],
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "_line",
+          "params": [
+            "obj"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "_check",
+          "params": [
+            "persona_id"
+          ],
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "get_config",
+          "params": [],
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "personas",
+          "params": [],
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "persona_sources",
+          "params": [
+            "persona_id"
+          ],
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "modes",
+          "params": [],
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "chat",
+          "params": [
+            "req"
+          ],
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "chat_stream",
+          "params": [
+            "req"
+          ],
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "panel",
+          "params": [
+            "req"
+          ],
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "panel_stream",
+          "params": [
+            "req"
+          ],
+          "exported": true,
+          "lineCount": 29
+        }
+      ],
+      "classes": [
+        {
+          "name": "Turn",
+          "methods": [],
+          "properties": [
+            "role",
+            "content"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "ChatRequest",
+          "methods": [],
+          "properties": [
+            "persona",
+            "question",
+            "mode",
+            "history"
+          ],
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "PanelRequest",
+          "methods": [],
+          "properties": [
+            "personas",
+            "question",
+            "mode"
+          ],
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "imports": [
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "concurrent.futures",
+          "specifiers": [
+            "ThreadPoolExecutor",
+            "as_completed"
+          ]
+        },
+        {
+          "source": "fastapi",
+          "specifiers": [
+            "FastAPI",
+            "HTTPException"
+          ]
+        },
+        {
+          "source": "fastapi.middleware.cors",
+          "specifiers": [
+            "CORSMiddleware"
+          ]
+        },
+        {
+          "source": "fastapi.responses",
+          "specifiers": [
+            "StreamingResponse"
+          ]
+        },
+        {
+          "source": "fastapi.staticfiles",
+          "specifiers": [
+            "StaticFiles"
+          ]
+        },
+        {
+          "source": "pydantic",
+          "specifiers": [
+            "BaseModel",
+            "Field"
+          ]
+        },
+        {
+          "source": "personarag",
+          "specifiers": [
+            "config"
+          ]
+        },
+        {
+          "source": "personarag.engine",
+          "specifiers": [
+            "PersonaEngine",
+            "grounding_report"
+          ]
+        },
+        {
+          "source": "personarag.llm",
+          "specifiers": [
+            "complete"
+          ]
+        },
+        {
+          "source": "personarag.panel",
+          "specifiers": [
+            "run_panel"
+          ]
+        },
+        {
+          "source": "personarag.personas",
+          "specifiers": [
+            "list_personas",
+            "load_persona"
+          ]
+        },
+        {
+          "source": "personarag.prompts",
+          "specifiers": [
+            "MODERATOR_SYSTEM",
+            "MODES",
+            "moderator_turn"
+          ]
+        }
+      ],
+      "exports": [
+        "Turn",
+        "ChatRequest",
+        "PanelRequest",
+        "_hit_json",
+        "_line",
+        "_check",
+        "get_config",
+        "personas",
+        "persona_sources",
+        "modes",
+        "chat",
+        "chat_stream",
+        "panel",
+        "panel_stream"
+      ],
+      "totalLines": 197,
+      "hasStructuralAnalysis": true
+    },
+    "app.py": {
+      "filePath": "app.py",
+      "contentHash": "4a18c58606385a9d86235224bef767f991cd8e1a1a398a53581cea6897d72296",
+      "functions": [
+        {
+          "name": "get_engine",
+          "params": [],
+          "returnType": "PersonaEngine",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "render_sources",
+          "params": [
+            "hits",
+            "grounding"
+          ],
+          "exported": true,
+          "lineCount": 16
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "streamlit",
+          "specifiers": [
+            "st"
+          ]
+        },
+        {
+          "source": "personarag",
+          "specifiers": [
+            "config"
+          ]
+        },
+        {
+          "source": "personarag.engine",
+          "specifiers": [
+            "PersonaEngine",
+            "grounding_report"
+          ]
+        },
+        {
+          "source": "personarag.panel",
+          "specifiers": [
+            "run_panel"
+          ]
+        },
+        {
+          "source": "personarag.personas",
+          "specifiers": [
+            "list_personas"
+          ]
+        },
+        {
+          "source": "personarag.prompts",
+          "specifiers": [
+            "MODES"
+          ]
+        }
+      ],
+      "exports": [
+        "get_engine",
+        "render_sources"
+      ],
+      "totalLines": 136,
+      "hasStructuralAnalysis": true
+    },
+    "conftest.py": {
+      "filePath": "conftest.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "env.template": {
+      "filePath": "env.template",
+      "contentHash": "ebb77117c3e7c85e4fd20a0252a7028f37eea4a362298c010ed158cd82409876",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 20,
+      "hasStructuralAnalysis": false
+    },
+    "eval/__init__.py": {
+      "filePath": "eval/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "eval/elon_musk.yaml": {
+      "filePath": "eval/elon_musk.yaml",
+      "contentHash": "c7a9410e25db6b42a4c30d59aa4e19aa84c168de01ea468786b9abe8b283e6da",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 95,
+      "hasStructuralAnalysis": false
+    },
+    "eval/mark_zuckerberg.yaml": {
+      "filePath": "eval/mark_zuckerberg.yaml",
+      "contentHash": "b4878bef137dfe830b17322ca7a1da28564795e3ef2141e89cd253ec08abd948",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 54,
+      "hasStructuralAnalysis": false
+    },
+    "eval/run_eval.py": {
+      "filePath": "eval/run_eval.py",
+      "contentHash": "9129413b3e9cecb425fbf72af44c17d19ec8d290d7e4023760e63fcdf46e19fe",
+      "functions": [
+        {
+          "name": "retrieval_metrics",
+          "params": [
+            "hits",
+            "item"
+          ],
+          "returnType": "dict",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "judge",
+          "params": [
+            "engine",
+            "answer"
+          ],
+          "returnType": "float | None",
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "mean",
+          "params": [
+            "values"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "compare_modes",
+          "params": [
+            "engine",
+            "persona",
+            "items"
+          ],
+          "returnType": "list[dict]",
+          "exported": true,
+          "lineCount": 24
+        },
+        {
+          "name": "main",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 70
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "argparse",
+          "specifiers": [
+            "argparse"
+          ]
+        },
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "yaml",
+          "specifiers": [
+            "yaml"
+          ]
+        },
+        {
+          "source": "personarag.engine",
+          "specifiers": [
+            "PersonaEngine"
+          ]
+        },
+        {
+          "source": "personarag.llm",
+          "specifiers": [
+            "complete"
+          ]
+        }
+      ],
+      "exports": [
+        "retrieval_metrics",
+        "judge",
+        "mean",
+        "compare_modes",
+        "main"
+      ],
+      "totalLines": 174,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/.env.production": {
+      "filePath": "frontend/.env.production",
+      "contentHash": "68e85e6dfb5eeeb58dab319f6bd00508e0afa633420737a189e6ff74c9224eff",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 3,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/README.md": {
+      "filePath": "frontend/README.md",
+      "contentHash": "e3601a199f9dbf210372d954a7149b90ab1bfb8ddee28c52abd32b1d4b8a2b4e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 16,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/eslint.config.js": {
+      "filePath": "frontend/eslint.config.js",
+      "contentHash": "dc00c7db700d03834d04a172ea709593ae5ef1bc750eb55dfc521a60d9e1baa0",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@eslint/js",
+          "specifiers": [
+            "js"
+          ]
+        },
+        {
+          "source": "globals",
+          "specifiers": [
+            "globals"
+          ]
+        },
+        {
+          "source": "eslint-plugin-react-hooks",
+          "specifiers": [
+            "reactHooks"
+          ]
+        },
+        {
+          "source": "eslint-plugin-react-refresh",
+          "specifiers": [
+            "reactRefresh"
+          ]
+        },
+        {
+          "source": "typescript-eslint",
+          "specifiers": [
+            "tseslint"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/index.html": {
+      "filePath": "frontend/index.html",
+      "contentHash": "34ed03f19b586ae54d531e4ddb7b6da1608070bc6206bcfa51bd7e456f194557",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 15,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/package.json": {
+      "filePath": "frontend/package.json",
+      "contentHash": "8995e2682d64733b502f49eed60fa7a4420f07080adc736554f1a84fa2c60784",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 30,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/App.tsx": {
+      "filePath": "frontend/src/App.tsx",
+      "contentHash": "cdf92599d6552949c0e385d892b6e8a4d34142a2cf6e04fac932570eddce488e",
+      "functions": [
+        {
+          "name": "load",
+          "params": [
+            "key",
+            "fallback"
+          ],
+          "returnType": "T",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "save",
+          "params": [
+            "key",
+            "value"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "App",
+          "params": [],
+          "exported": true,
+          "lineCount": 191
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useCallback",
+            "useEffect",
+            "useState"
+          ]
+        },
+        {
+          "source": "./api",
+          "specifiers": [
+            "api",
+            "KnowledgeSource",
+            "Persona",
+            "ServerConfig"
+          ]
+        },
+        {
+          "source": "./components/Chat",
+          "specifiers": [
+            "Chat"
+          ]
+        },
+        {
+          "source": "./components/Panel",
+          "specifiers": [
+            "Panel"
+          ]
+        },
+        {
+          "source": "./components/SourcesDrawer",
+          "specifiers": [
+            "SourcesDrawer"
+          ]
+        },
+        {
+          "source": "./types",
+          "specifiers": [
+            "DrawerState",
+            "Message"
+          ]
+        }
+      ],
+      "exports": [
+        "App"
+      ],
+      "totalLines": 218,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/src/api.ts": {
+      "filePath": "frontend/src/api.ts",
+      "contentHash": "09aeff2904dc48a149d31cf5f0eea8ffac8e79e93a2565e44f9b2e1c156b8e0c",
+      "functions": [
+        {
+          "name": "getJSON",
+          "params": [
+            "path"
+          ],
+          "returnType": "Promise<T>",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "streamChat",
+          "params": [
+            "req",
+            "signal"
+          ],
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "streamPanel",
+          "params": [
+            "req",
+            "signal"
+          ],
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [
+        {
+          "name": "ApiError",
+          "methods": [
+            "constructor"
+          ],
+          "properties": [
+            "status"
+          ],
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "imports": [],
+      "exports": [
+        "ApiError",
+        "api",
+        "streamChat",
+        "streamPanel"
+      ],
+      "totalLines": 142,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/src/components/Answer.tsx": {
+      "filePath": "frontend/src/components/Answer.tsx",
+      "contentHash": "8c5895519588a078715685858b09e50585bff834b78ee84ec117bcb9d5ef948d",
+      "functions": [
+        {
+          "name": "renderInline",
+          "params": [
+            "text",
+            "props"
+          ],
+          "returnType": "ReactNode[]",
+          "exported": false,
+          "lineCount": 24
+        },
+        {
+          "name": "Answer",
+          "params": [
+            "props"
+          ],
+          "exported": true,
+          "lineCount": 31
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "Fragment",
+            "ReactNode"
+          ]
+        }
+      ],
+      "exports": [
+        "Answer"
+      ],
+      "totalLines": 72,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/src/components/Chat.tsx": {
+      "filePath": "frontend/src/components/Chat.tsx",
+      "contentHash": "8cb8974cf00c00a74f44f0638fa462051ddfb068c3e4c01b2fa7053b0028354d",
+      "functions": [
+        {
+          "name": "Chat",
+          "params": [
+            "{ persona, mode, messages, setMessages, drawer, openDrawer }"
+          ],
+          "exported": true,
+          "lineCount": 161
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useEffect",
+            "useRef",
+            "useState"
+          ]
+        },
+        {
+          "source": "../api",
+          "specifiers": [
+            "ApiError",
+            "streamChat",
+            "Persona",
+            "Turn"
+          ]
+        },
+        {
+          "source": "../types",
+          "specifiers": [
+            "uid",
+            "DrawerState",
+            "Message"
+          ]
+        },
+        {
+          "source": "./Answer",
+          "specifiers": [
+            "Answer"
+          ]
+        },
+        {
+          "source": "./GroundingBadge",
+          "specifiers": [
+            "GroundingBadge"
+          ]
+        }
+      ],
+      "exports": [
+        "Chat"
+      ],
+      "totalLines": 200,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/src/components/GroundingBadge.tsx": {
+      "filePath": "frontend/src/components/GroundingBadge.tsx",
+      "contentHash": "62345ea2e07d7f77fc157d338eba3a1f7a9240c7cb9a73ada8fa716852c200bc",
+      "functions": [
+        {
+          "name": "GroundingBadge",
+          "params": [
+            "{ grounding }"
+          ],
+          "exported": true,
+          "lineCount": 13
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../api",
+          "specifiers": [
+            "Grounding"
+          ]
+        }
+      ],
+      "exports": [
+        "GroundingBadge"
+      ],
+      "totalLines": 23,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/src/components/Panel.tsx": {
+      "filePath": "frontend/src/components/Panel.tsx",
+      "contentHash": "5facee0604df50bfffa4916857a92c793f63a1711576d64fccf0d947da323c87",
+      "functions": [
+        {
+          "name": "Panel",
+          "params": [
+            "{ personas, mode, openDrawer }"
+          ],
+          "exported": true,
+          "lineCount": 150
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useRef",
+            "useState"
+          ]
+        },
+        {
+          "source": "../api",
+          "specifiers": [
+            "ApiError",
+            "streamPanel",
+            "PanelAnswer",
+            "Persona"
+          ]
+        },
+        {
+          "source": "../types",
+          "specifiers": [
+            "DrawerState"
+          ]
+        },
+        {
+          "source": "./Answer",
+          "specifiers": [
+            "Answer"
+          ]
+        },
+        {
+          "source": "./GroundingBadge",
+          "specifiers": [
+            "GroundingBadge"
+          ]
+        }
+      ],
+      "exports": [
+        "Panel"
+      ],
+      "totalLines": 163,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/src/components/SourcesDrawer.tsx": {
+      "filePath": "frontend/src/components/SourcesDrawer.tsx",
+      "contentHash": "b407ff98774d5c0ea817649a7f93980246315aeae38d2f91f1abcf058b572e1e",
+      "functions": [
+        {
+          "name": "SourcesDrawer",
+          "params": [
+            "{ title, sources, cited, active, onSelect, onClose }"
+          ],
+          "exported": true,
+          "lineCount": 66
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useEffect",
+            "useRef"
+          ]
+        },
+        {
+          "source": "../api",
+          "specifiers": [
+            "Source"
+          ]
+        }
+      ],
+      "exports": [
+        "SourcesDrawer"
+      ],
+      "totalLines": 79,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/src/main.tsx": {
+      "filePath": "frontend/src/main.tsx",
+      "contentHash": "ccbefe7be6c69706a1bb01c4c3f20492eb002435af6ba7e5a6d45f7c6aa3a140",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "StrictMode"
+          ]
+        },
+        {
+          "source": "react-dom/client",
+          "specifiers": [
+            "createRoot"
+          ]
+        },
+        {
+          "source": "./App",
+          "specifiers": [
+            "App"
+          ]
+        },
+        {
+          "source": "./styles.css",
+          "specifiers": []
+        }
+      ],
+      "exports": [],
+      "totalLines": 11,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/src/styles.css": {
+      "filePath": "frontend/src/styles.css",
+      "contentHash": "5db388e2d03c562519017dafa0046dd5a468921a0dec9d67e08e21b2954acf75",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 203,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/types.ts": {
+      "filePath": "frontend/src/types.ts",
+      "contentHash": "6a23f383ad1d5fda9b9a3a948a0d4105513c86f7a150a7954f4b62a8d4ee25a5",
+      "functions": [
+        {
+          "name": "uid",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./api",
+          "specifiers": [
+            "Grounding",
+            "Source"
+          ]
+        }
+      ],
+      "exports": [
+        "uid"
+      ],
+      "totalLines": 21,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/src/vite-env.d.ts": {
+      "filePath": "frontend/src/vite-env.d.ts",
+      "contentHash": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/tsconfig.app.json": {
+      "filePath": "frontend/tsconfig.app.json",
+      "contentHash": "9398d9fd4fb7da6a844e6f957c0718e9b9999865924d775925ad620ea5fd7a04",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 28,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/tsconfig.json": {
+      "filePath": "frontend/tsconfig.json",
+      "contentHash": "770b4140bbb581e2dfd9ea9946ffc9c75a1d86ba7d2db5f77c83e37cbdf9d808",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/tsconfig.node.json": {
+      "filePath": "frontend/tsconfig.node.json",
+      "contentHash": "cbd52595b15d6df830561f659111baa38a89d3e30d1683c4e027b78925bb603d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 26,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/vite.config.ts": {
+      "filePath": "frontend/vite.config.ts",
+      "contentHash": "11b410b6904604e53e09b105d94b93475a5073104e15908732a71211fdc3a2d0",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vite",
+          "specifiers": [
+            "defineConfig"
+          ]
+        },
+        {
+          "source": "@vitejs/plugin-react",
+          "specifiers": [
+            "react"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 18,
+      "hasStructuralAnalysis": true
+    },
+    "personarag/__init__.py": {
+      "filePath": "personarag/__init__.py",
+      "contentHash": "3abfa8045e3d03ffc0a61636ec67c30e6a7e729388596641517690de89e63b48",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": true
+    },
+    "personarag/chunking.py": {
+      "filePath": "personarag/chunking.py",
+      "contentHash": "a62e29da8f1b15675f15be22330b69112f2789834890312a9d6116104d9d0bad",
+      "functions": [
+        {
+          "name": "split_sentences",
+          "params": [
+            "text"
+          ],
+          "returnType": "list[str]",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "chunk_text",
+          "params": [
+            "text",
+            "max_words",
+            "overlap_words"
+          ],
+          "returnType": "list[str]",
+          "exported": true,
+          "lineCount": 27
+        },
+        {
+          "name": "chunk_document",
+          "params": [
+            "doc"
+          ],
+          "returnType": "list[Chunk]",
+          "exported": true,
+          "lineCount": 11
+        }
+      ],
+      "classes": [
+        {
+          "name": "Chunk",
+          "methods": [],
+          "properties": [
+            "id",
+            "text",
+            "metadata"
+          ],
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "imports": [
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass"
+          ]
+        },
+        {
+          "source": ".config",
+          "specifiers": [
+            "CHUNK_OVERLAP_WORDS",
+            "CHUNK_WORDS"
+          ]
+        },
+        {
+          "source": ".loaders",
+          "specifiers": [
+            "Document"
+          ]
+        }
+      ],
+      "exports": [
+        "Chunk",
+        "split_sentences",
+        "chunk_text",
+        "chunk_document"
+      ],
+      "totalLines": 81,
+      "hasStructuralAnalysis": true
+    },
+    "personarag/config.py": {
+      "filePath": "personarag/config.py",
+      "contentHash": "bcc3f4da5439489648d89370189479bb6da311ae13272d0ea6ab2bcd68ea422e",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "dotenv",
+          "specifiers": [
+            "load_dotenv"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 63,
+      "hasStructuralAnalysis": true
+    },
+    "personarag/engine.py": {
+      "filePath": "personarag/engine.py",
+      "contentHash": "7dcf21dbc779542d9530e8c3dc1c626e9b3636816388b355b54ec86bc9420d51",
+      "functions": [
+        {
+          "name": "grounding_report",
+          "params": [
+            "text",
+            "hits"
+          ],
+          "returnType": "dict",
+          "exported": true,
+          "lineCount": 28
+        }
+      ],
+      "classes": [
+        {
+          "name": "Answer",
+          "methods": [
+            "cited_hits"
+          ],
+          "properties": [
+            "persona",
+            "question",
+            "text",
+            "hits",
+            "grounding"
+          ],
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "PersonaEngine",
+          "methods": [
+            "__init__",
+            "llm",
+            "retrieve",
+            "_messages",
+            "stream",
+            "ask"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 48
+        }
+      ],
+      "imports": [
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "collections.abc",
+          "specifiers": [
+            "Iterator"
+          ]
+        },
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass",
+            "field"
+          ]
+        },
+        {
+          "source": ".",
+          "specifiers": [
+            "config"
+          ]
+        },
+        {
+          "source": ".llm",
+          "specifiers": [
+            "LLM",
+            "complete",
+            "get_llm"
+          ]
+        },
+        {
+          "source": ".personas",
+          "specifiers": [
+            "Persona",
+            "load_persona"
+          ]
+        },
+        {
+          "source": ".prompts",
+          "specifiers": [
+            "system_prompt",
+            "user_turn"
+          ]
+        },
+        {
+          "source": ".store",
+          "specifiers": [
+            "Hit",
+            "VectorStore"
+          ]
+        }
+      ],
+      "exports": [
+        "Answer",
+        "grounding_report",
+        "PersonaEngine"
+      ],
+      "totalLines": 110,
+      "hasStructuralAnalysis": true
+    },
+    "personarag/ingest.py": {
+      "filePath": "personarag/ingest.py",
+      "contentHash": "416f2d774743b5ba57608bb6193a775fc1af0a2a8e44f7c229791b03c3834bf1",
+      "functions": [
+        {
+          "name": "ingest",
+          "params": [
+            "persona_id",
+            "store",
+            "reset"
+          ],
+          "returnType": "dict",
+          "exported": true,
+          "lineCount": 17
+        },
+        {
+          "name": "main",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 28
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "argparse",
+          "specifiers": [
+            "argparse"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": ".",
+          "specifiers": [
+            "config"
+          ]
+        },
+        {
+          "source": ".chunking",
+          "specifiers": [
+            "chunk_document"
+          ]
+        },
+        {
+          "source": ".loaders",
+          "specifiers": [
+            "load_persona_sources"
+          ]
+        },
+        {
+          "source": ".personas",
+          "specifiers": [
+            "list_personas",
+            "load_persona"
+          ]
+        },
+        {
+          "source": ".store",
+          "specifiers": [
+            "VectorStore"
+          ]
+        }
+      ],
+      "exports": [
+        "ingest",
+        "main"
+      ],
+      "totalLines": 68,
+      "hasStructuralAnalysis": true
+    },
+    "personarag/llm.py": {
+      "filePath": "personarag/llm.py",
+      "contentHash": "55257545fb6fb8d058509f19c8dcc0e325fbdd6fe6ab83dfbc0a200314d70ee3",
+      "functions": [
+        {
+          "name": "complete",
+          "params": [
+            "llm",
+            "system",
+            "messages",
+            "max_tokens"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "get_llm",
+          "params": [
+            "provider"
+          ],
+          "returnType": "LLM",
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "classes": [
+        {
+          "name": "LLM",
+          "methods": [
+            "stream"
+          ],
+          "properties": [
+            "name"
+          ],
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "ClaudeLLM",
+          "methods": [
+            "__init__",
+            "stream"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "OllamaLLM",
+          "methods": [
+            "__init__",
+            "stream"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 28
+        }
+      ],
+      "imports": [
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "collections.abc",
+          "specifiers": [
+            "Iterator"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Protocol"
+          ]
+        },
+        {
+          "source": "requests",
+          "specifiers": [
+            "requests"
+          ]
+        },
+        {
+          "source": ".",
+          "specifiers": [
+            "config"
+          ]
+        }
+      ],
+      "exports": [
+        "LLM",
+        "complete",
+        "ClaudeLLM",
+        "OllamaLLM",
+        "get_llm"
+      ],
+      "totalLines": 100,
+      "hasStructuralAnalysis": true
+    },
+    "personarag/loaders.py": {
+      "filePath": "personarag/loaders.py",
+      "contentHash": "18f620e7e2b5913737fd679e3fcd7613d488facce29a2d9fbdbc8419adf0c05d",
+      "functions": [
+        {
+          "name": "_slug",
+          "params": [
+            "value"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "_split_front_matter",
+          "params": [
+            "text"
+          ],
+          "returnType": "tuple[dict, str]",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "_strip_subtitles",
+          "params": [
+            "text"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "load_file",
+          "params": [
+            "path",
+            "meta"
+          ],
+          "returnType": "Document",
+          "exported": true,
+          "lineCount": 25
+        },
+        {
+          "name": "_cached",
+          "params": [
+            "cache_dir",
+            "key",
+            "fetch"
+          ],
+          "returnType": "dict",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "fetch_url",
+          "params": [
+            "url",
+            "cache_dir"
+          ],
+          "returnType": "dict",
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "fetch_youtube",
+          "params": [
+            "video_id",
+            "cache_dir",
+            "force_whisper"
+          ],
+          "returnType": "dict",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "fetch_audio",
+          "params": [
+            "source",
+            "cache_dir",
+            "base_dir"
+          ],
+          "returnType": "dict",
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "load_persona_sources",
+          "params": [
+            "persona_dir"
+          ],
+          "returnType": "tuple[list[Document], list[str]]",
+          "exported": true,
+          "lineCount": 67
+        }
+      ],
+      "classes": [
+        {
+          "name": "Document",
+          "methods": [],
+          "properties": [
+            "text",
+            "metadata"
+          ],
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "imports": [
+        {
+          "source": "hashlib",
+          "specifiers": [
+            "hashlib"
+          ]
+        },
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass",
+            "field"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "yaml",
+          "specifiers": [
+            "yaml"
+          ]
+        },
+        {
+          "source": ".",
+          "specifiers": [
+            "config"
+          ]
+        }
+      ],
+      "exports": [
+        "Document",
+        "_slug",
+        "_split_front_matter",
+        "_strip_subtitles",
+        "load_file",
+        "_cached",
+        "fetch_url",
+        "fetch_youtube",
+        "fetch_audio",
+        "load_persona_sources"
+      ],
+      "totalLines": 219,
+      "hasStructuralAnalysis": true
+    },
+    "personarag/panel.py": {
+      "filePath": "personarag/panel.py",
+      "contentHash": "16b8e8a1eb520d26cae24695720b1729bd05edac4296bf2be934cdb4d8ebde4b",
+      "functions": [
+        {
+          "name": "run_panel",
+          "params": [
+            "engine",
+            "persona_ids",
+            "question",
+            "mode"
+          ],
+          "returnType": "PanelResult",
+          "exported": true,
+          "lineCount": 12
+        }
+      ],
+      "classes": [
+        {
+          "name": "PanelResult",
+          "methods": [],
+          "properties": [
+            "question",
+            "answers",
+            "summary"
+          ],
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "imports": [
+        {
+          "source": "concurrent.futures",
+          "specifiers": [
+            "ThreadPoolExecutor"
+          ]
+        },
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass"
+          ]
+        },
+        {
+          "source": ".engine",
+          "specifiers": [
+            "Answer",
+            "PersonaEngine"
+          ]
+        },
+        {
+          "source": ".llm",
+          "specifiers": [
+            "complete"
+          ]
+        },
+        {
+          "source": ".prompts",
+          "specifiers": [
+            "MODERATOR_SYSTEM",
+            "moderator_turn"
+          ]
+        }
+      ],
+      "exports": [
+        "PanelResult",
+        "run_panel"
+      ],
+      "totalLines": 30,
+      "hasStructuralAnalysis": true
+    },
+    "personarag/personas.py": {
+      "filePath": "personarag/personas.py",
+      "contentHash": "2456a68b616ec3773b03c440fa63621c37451c399c31c51444963e44d1fc1bb6",
+      "functions": [
+        {
+          "name": "load_persona",
+          "params": [
+            "persona_id"
+          ],
+          "returnType": "Persona",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "list_personas",
+          "params": [],
+          "returnType": "list[Persona]",
+          "exported": true,
+          "lineCount": 6
+        }
+      ],
+      "classes": [
+        {
+          "name": "Persona",
+          "methods": [
+            "dir"
+          ],
+          "properties": [
+            "id",
+            "name",
+            "tagline",
+            "avatar",
+            "background",
+            "domains",
+            "communication_style",
+            "known_positions"
+          ],
+          "exported": true,
+          "lineCount": 13
+        }
+      ],
+      "imports": [
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass",
+            "field"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "yaml",
+          "specifiers": [
+            "yaml"
+          ]
+        },
+        {
+          "source": ".config",
+          "specifiers": [
+            "PERSONAS_DIR"
+          ]
+        }
+      ],
+      "exports": [
+        "Persona",
+        "load_persona",
+        "list_personas"
+      ],
+      "totalLines": 43,
+      "hasStructuralAnalysis": true
+    },
+    "personarag/prompts.py": {
+      "filePath": "personarag/prompts.py",
+      "contentHash": "7a820fd4a3882cc5db435e773fb2e66740defd50a7ab2587e8f919d24f2312ff",
+      "functions": [
+        {
+          "name": "system_prompt",
+          "params": [
+            "persona"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 24
+        },
+        {
+          "name": "format_sources",
+          "params": [
+            "hits"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "user_turn",
+          "params": [
+            "question",
+            "hits",
+            "mode"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "moderator_turn",
+          "params": [
+            "question",
+            "answers"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": ".personas",
+          "specifiers": [
+            "Persona"
+          ]
+        },
+        {
+          "source": ".store",
+          "specifiers": [
+            "Hit"
+          ]
+        }
+      ],
+      "exports": [
+        "system_prompt",
+        "format_sources",
+        "user_turn",
+        "moderator_turn"
+      ],
+      "totalLines": 95,
+      "hasStructuralAnalysis": true
+    },
+    "personarag/snapshot.py": {
+      "filePath": "personarag/snapshot.py",
+      "contentHash": "5e6064f4c14f70e1de7192e2d004889fab00484226620a2f45f552198ea0484f",
+      "functions": [
+        {
+          "name": "export",
+          "params": [
+            "store"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "restore",
+          "params": [
+            "store"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "main",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 6
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "argparse",
+          "specifiers": [
+            "argparse"
+          ]
+        },
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": ".chunking",
+          "specifiers": [
+            "Chunk"
+          ]
+        },
+        {
+          "source": ".config",
+          "specifiers": [
+            "ROOT"
+          ]
+        },
+        {
+          "source": ".personas",
+          "specifiers": [
+            "list_personas"
+          ]
+        },
+        {
+          "source": ".store",
+          "specifiers": [
+            "VectorStore"
+          ]
+        }
+      ],
+      "exports": [
+        "export",
+        "restore",
+        "main"
+      ],
+      "totalLines": 53,
+      "hasStructuralAnalysis": true
+    },
+    "personarag/store.py": {
+      "filePath": "personarag/store.py",
+      "contentHash": "705e0c36d2883487da8fd50d633f81f6233524ed37c59cbccd95bea5fcd67c7d",
+      "functions": [
+        {
+          "name": "tokenize",
+          "params": [
+            "text"
+          ],
+          "returnType": "list[str]",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "_clean_metadata",
+          "params": [
+            "meta"
+          ],
+          "returnType": "dict",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "rrf_fuse",
+          "params": [],
+          "returnType": "list[str]",
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "classes": [
+        {
+          "name": "Hit",
+          "methods": [
+            "label"
+          ],
+          "properties": [
+            "id",
+            "text",
+            "metadata",
+            "score",
+            "rerank"
+          ],
+          "exported": true,
+          "lineCount": 16
+        },
+        {
+          "name": "VectorStore",
+          "methods": [
+            "__init__",
+            "model",
+            "reranker",
+            "embed",
+            "collection",
+            "reset",
+            "add",
+            "count",
+            "sources",
+            "_bm25_index",
+            "_keyword_ranking",
+            "search"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 139
+        }
+      ],
+      "imports": [
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass"
+          ]
+        },
+        {
+          "source": "functools",
+          "specifiers": [
+            "cached_property"
+          ]
+        },
+        {
+          "source": "chromadb",
+          "specifiers": [
+            "chromadb"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": ".",
+          "specifiers": [
+            "config"
+          ]
+        },
+        {
+          "source": ".chunking",
+          "specifiers": [
+            "Chunk"
+          ]
+        },
+        {
+          "source": ".config",
+          "specifiers": [
+            "DB_DIR",
+            "EMBED_MODEL",
+            "EMBED_QUERY_PREFIX",
+            "MIN_SIMILARITY",
+            "TOP_K"
+          ]
+        }
+      ],
+      "exports": [
+        "tokenize",
+        "Hit",
+        "_clean_metadata",
+        "rrf_fuse",
+        "VectorStore"
+      ],
+      "totalLines": 212,
+      "hasStructuralAnalysis": true
+    },
+    "personarag/transcribe.py": {
+      "filePath": "personarag/transcribe.py",
+      "contentHash": "737f8ade9d26556963aae45e79b729ac6e38b9815682c23c7945dd3ffd747f17",
+      "functions": [
+        {
+          "name": "_model",
+          "params": [],
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "download_audio",
+          "params": [
+            "url",
+            "out_dir"
+          ],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "transcribe_file",
+          "params": [
+            "path"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "transcribe_url",
+          "params": [
+            "url"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "tempfile",
+          "specifiers": [
+            "tempfile"
+          ]
+        },
+        {
+          "source": "functools",
+          "specifiers": [
+            "lru_cache"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": ".",
+          "specifiers": [
+            "config"
+          ]
+        }
+      ],
+      "exports": [
+        "_model",
+        "download_audio",
+        "transcribe_file",
+        "transcribe_url"
+      ],
+      "totalLines": 49,
+      "hasStructuralAnalysis": true
+    },
+    "personas/elon_musk/persona.yaml": {
+      "filePath": "personas/elon_musk/persona.yaml",
+      "contentHash": "b00211fc79b016bb6eb59c37f4814fc92adf138a406f40ede411b376810a7af3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 27,
+      "hasStructuralAnalysis": false
+    },
+    "personas/elon_musk/sources.yaml": {
+      "filePath": "personas/elon_musk/sources.yaml",
+      "contentHash": "a971379f5ac97f3376fc6418c0682dc2c8d19d8b2a219c1910094bfe43cb0399",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 89,
+      "hasStructuralAnalysis": false
+    },
+    "personas/mark_zuckerberg/persona.yaml": {
+      "filePath": "personas/mark_zuckerberg/persona.yaml",
+      "contentHash": "5a5aa5f97a10df644d668d3dcf4786ddc297005c4ec0858c85475bb45f82828f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 25,
+      "hasStructuralAnalysis": false
+    },
+    "personas/mark_zuckerberg/sources.yaml": {
+      "filePath": "personas/mark_zuckerberg/sources.yaml",
+      "contentHash": "6ab203515019168e564d754a1179a722b0f67e68180fd3eec477d40076d75df9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 56,
+      "hasStructuralAnalysis": false
+    },
+    "personas/ratan_tata/persona.yaml": {
+      "filePath": "personas/ratan_tata/persona.yaml",
+      "contentHash": "76f45e4ef22c1295b2e2f475560745b7c4853537cbb46c89f3f890def2760ee5",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 22,
+      "hasStructuralAnalysis": false
+    },
+    "personas/ratan_tata/sources.yaml": {
+      "filePath": "personas/ratan_tata/sources.yaml",
+      "contentHash": "ec6bbb732dd3131f8b9eddfe54088c253dc2cc14715d08a51eb22633ccdb14ef",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 33,
+      "hasStructuralAnalysis": false
+    },
+    "personas/tim_cook/persona.yaml": {
+      "filePath": "personas/tim_cook/persona.yaml",
+      "contentHash": "642de4987005c7afecc219670caff4a53637b892423fe185458026109be9c146",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 25,
+      "hasStructuralAnalysis": false
+    },
+    "personas/tim_cook/sources.yaml": {
+      "filePath": "personas/tim_cook/sources.yaml",
+      "contentHash": "8839b51e6f9c0b00fe8c4259ab86578514e0ed2a901d140f26158396b97b187a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 31,
+      "hasStructuralAnalysis": false
+    },
+    "requirements.txt": {
+      "filePath": "requirements.txt",
+      "contentHash": "fadf49a8fb7cf0fb0e550b9083d2469e69a268954612b3ee87d09a6b79634635",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 20,
+      "hasStructuralAnalysis": false
+    },
+    "scripts/record_demo.py": {
+      "filePath": "scripts/record_demo.py",
+      "contentHash": "2e71aa8f4c1aa8d948f41d045d495711a0b30a54246cd9ef1b4acbfe59049192",
+      "functions": [
+        {
+          "name": "open_page",
+          "params": [
+            "browser",
+            "video_dir"
+          ],
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "wait_answer_done",
+          "params": [
+            "page",
+            "count",
+            "timeout"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "record_chat",
+          "params": [
+            "browser",
+            "out_dir"
+          ],
+          "returnType": "dict",
+          "exported": true,
+          "lineCount": 50
+        },
+        {
+          "name": "record_panel",
+          "params": [
+            "browser",
+            "out_dir"
+          ],
+          "returnType": "dict",
+          "exported": true,
+          "lineCount": 23
+        },
+        {
+          "name": "ffmpeg",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "latest_webm",
+          "params": [
+            "folder"
+          ],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "edit",
+          "params": [
+            "chat",
+            "panel",
+            "panel_marks"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 21
+        },
+        {
+          "name": "main",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 21
+        }
+      ],
+      "classes": [
+        {
+          "name": "Demo",
+          "methods": [
+            "__init__",
+            "mark",
+            "pause",
+            "caption",
+            "move_to",
+            "click",
+            "type"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 33
+        }
+      ],
+      "imports": [
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "subprocess",
+          "specifiers": [
+            "subprocess"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "imageio_ffmpeg",
+          "specifiers": [
+            "imageio_ffmpeg"
+          ]
+        },
+        {
+          "source": "playwright.sync_api",
+          "specifiers": [
+            "Page",
+            "sync_playwright"
+          ]
+        }
+      ],
+      "exports": [
+        "Demo",
+        "open_page",
+        "wait_answer_done",
+        "record_chat",
+        "record_panel",
+        "ffmpeg",
+        "latest_webm",
+        "edit",
+        "main"
+      ],
+      "totalLines": 251,
+      "hasStructuralAnalysis": true
+    },
+    "tests/test_core.py": {
+      "filePath": "tests/test_core.py",
+      "contentHash": "8acaca31cadb2bc04b901ebf688b023304a498fe8fbeb09c3c448e9d5c981718",
+      "functions": [
+        {
+          "name": "_hit",
+          "params": [
+            "score"
+          ],
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "test_chunks_respect_size_and_overlap",
+          "params": [],
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "test_unpunctuated_transcript_still_splits",
+          "params": [],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "test_front_matter_parsed",
+          "params": [],
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "test_subtitles_stripped",
+          "params": [],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "test_grounding_levels",
+          "params": [],
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "test_rrf_rewards_agreement_between_retrievers",
+          "params": [],
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "test_tokenize_drops_stopwords_and_punctuation",
+          "params": [],
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "test_citation_after_full_stop_counts_for_that_sentence",
+          "params": [],
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "personarag.chunking",
+          "specifiers": [
+            "chunk_text",
+            "split_sentences"
+          ]
+        },
+        {
+          "source": "personarag.engine",
+          "specifiers": [
+            "grounding_report"
+          ]
+        },
+        {
+          "source": "personarag.loaders",
+          "specifiers": [
+            "_split_front_matter",
+            "_strip_subtitles"
+          ]
+        },
+        {
+          "source": "personarag.store",
+          "specifiers": [
+            "Hit",
+            "rrf_fuse",
+            "tokenize"
+          ]
+        }
+      ],
+      "exports": [
+        "_hit",
+        "test_chunks_respect_size_and_overlap",
+        "test_unpunctuated_transcript_still_splits",
+        "test_front_matter_parsed",
+        "test_subtitles_stripped",
+        "test_grounding_levels",
+        "test_rrf_rewards_agreement_between_retrievers",
+        "test_tokenize_drops_stopwords_and_punctuation",
+        "test_citation_after_full_stop_counts_for_that_sentence"
+      ],
+      "totalLines": 66,
+      "hasStructuralAnalysis": true
+    }
+  }
+}
